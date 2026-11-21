@@ -610,8 +610,9 @@ document.getElementById("authForm").addEventListener("submit", async function(e)
 
 async function startApp() {
   if (
-    SUPABASE_URL.includes("PASTE_YOUR") ||
-    SUPABASE_ANON_KEY.includes("PASTE_YOUR")
+    const SUPABASE_URL = "https://odewqgpqeqzbieqrvywo.supabase.co";
+
+const SUPABASE_ANON_KEY = "sb_publishable_lkHssrmtg4J2DrwOBAHO9w_HqNUwsBe";
   ) {
     return;
   }
