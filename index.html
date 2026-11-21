@@ -440,6 +440,7 @@ async function loadFriends(){
 }
 
 /* DATABASE AUTH DIAGNOSTIC */
+
 async function openChat(friendId){
   try{
     const {data:{user:authUser},error:authError}=await db.auth.getUser();
@@ -452,37 +453,110 @@ async function openChat(friendId){
 
     currentUser=authUser;
 
-    const {data:{session},error:sessionError}=await db.auth.getSession();
-
-    if(sessionError){
-      alert("Session Error: "+sessionError.message);
+    if(friendId===authUser.id){
+      alert("You cannot open a chat with yourself.");
       return;
     }
 
-    if(!session || !session.access_token){
-      alert("No active access token found.");
-      return;
+    const {data:friend,error:friendError}=await db
+      .from("profiles")
+      .select("*")
+      .eq("id",friendId)
+      .single();
+
+    if(friendError) throw friendError;
+
+    activeFriend=friend;
+
+    el("dashboard").classList.add("hidden");
+    el("chatView").classList.remove("hidden");
+    el("chatName").textContent=friend.display_name || friend.username || "Friend";
+    el("chatAvatar").textContent=initials(friend.display_name || friend.username);
+
+    const {data:myMemberships,error:myError}=await db
+      .from("conversation_members")
+      .select("conversation_id")
+      .eq("user_id",authUser.id);
+
+    if(myError) throw myError;
+
+    let found=null;
+
+    for(const m of (myMemberships||[])){
+      const {data:members,error:membersError}=await db
+        .from("conversation_members")
+        .select("user_id")
+        .eq("conversation_id",m.conversation_id);
+
+      if(membersError) throw membersError;
+
+      const memberIds=(members||[]).map(x=>x.user_id);
+
+      if(
+        memberIds.includes(friendId) &&
+        memberIds.includes(authUser.id) &&
+        memberIds.length===2
+      ){
+        const {data:conversation,error:conversationError}=await db
+          .from("conversations")
+          .select("*")
+          .eq("id",m.conversation_id)
+          .eq("is_group",false)
+          .maybeSingle();
+
+        if(conversationError) throw conversationError;
+
+        if(conversation){
+          found=conversation;
+          break;
+        }
+      }
     }
 
-    let payload;
-
-    try{
-      const base64=session.access_token.split(".")[1]
-        .replace(/-/g,"+")
-        .replace(/_/g,"/");
-
-      payload=JSON.parse(
-        atob(base64+"=".repeat((4-base64.length%4)%4))
+    if(!found){
+      const {data:newConversationId,error:createError}=await db.rpc(
+        "daoos_create_private_conversation",
+        {friend_uuid:friendId}
       );
-    }catch(decodeError){
-      alert("Could not decode JWT: "+decodeError.message);
-      return;
+
+      if(createError){
+        console.error("Conversation RPC failed:",createError);
+        throw new Error(
+          "Could not create conversation: "+createError.message
+        );
+      }
+
+      if(!newConversationId){
+        throw new Error("Database did not return a conversation ID.");
+      }
+
+      const {data:conversation,error:fetchError}=await db
+        .from("conversations")
+        .select("*")
+        .eq("id",newConversationId)
+        .single();
+
+      if(fetchError) throw fetchError;
+
+      found=conversation;
     }
 
-    alert(
-      "JWT Role: "+(payload.role || "NOT FOUND")+
-      "\nJWT User ID: "+(payload.sub || "NOT FOUND")
-    );
+    activeConversation=found.id;
+
+    await loadMessages();
+    subscribeMessages();
+
+  }catch(error){
+    console.error("Open chat error:",error);
+    alert(error.message || "Could not open chat.");
+
+    activeConversation=null;
+
+    el("chatView").classList.add("hidden");
+    el("dashboard").classList.remove("hidden");
+  }
+}
+
 
     /* NEW DATABASE AUTH CHECK */
     const {data:authCheck,error:authCheckError} =
