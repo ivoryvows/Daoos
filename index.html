@@ -439,7 +439,7 @@ async function loadFriends(){
     </div>`).join("");
 }
 
-/* JWT ROLE CHECKER */
+/* DATABASE AUTH DIAGNOSTIC */
 async function openChat(friendId){
   try{
     const {data:{user:authUser},error:authError}=await db.auth.getUser();
@@ -483,6 +483,25 @@ async function openChat(friendId){
       "JWT Role: "+(payload.role || "NOT FOUND")+
       "\nJWT User ID: "+(payload.sub || "NOT FOUND")
     );
+
+    /* NEW DATABASE AUTH CHECK */
+    const {data:authCheck,error:authCheckError} =
+      await db.rpc("daoos_debug_auth");
+
+    alert(
+      "Database User ID: "+
+      (authCheck?.user_id || "NULL")+
+      "\nDatabase Role: "+
+      (authCheck?.role || "NULL")+
+      "\nRPC Error: "+
+      (authCheckError?.message || "None")
+    );
+
+    if(authCheckError){
+      throw new Error(
+        "Database auth check failed: "+authCheckError.message
+      );
+    }
 
     if(friendId===authUser.id){
       alert("You cannot open a chat with yourself.");
