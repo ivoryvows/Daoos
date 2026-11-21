@@ -439,7 +439,7 @@ async function loadFriends(){
     </div>`).join("");
 }
 
-/* UPDATED CHAT CREATION */
+/* JWT ROLE CHECKER */
 async function openChat(friendId){
   try{
     const {data:{user:authUser},error:authError}=await db.auth.getUser();
@@ -451,14 +451,39 @@ async function openChat(friendId){
     }
 
     currentUser=authUser;
-const {data:{session},error:sessionError}=await db.auth.getSession();
 
-alert(
-  "User ID: "+authUser.id+
-  "\nSession User ID: "+(session?.user?.id || "NO SESSION")+
-  "\nToken: "+(session?.access_token ? "PRESENT" : "MISSING")+
-  "\nSession Error: "+(sessionError?.message || "None")
-);
+    const {data:{session},error:sessionError}=await db.auth.getSession();
+
+    if(sessionError){
+      alert("Session Error: "+sessionError.message);
+      return;
+    }
+
+    if(!session || !session.access_token){
+      alert("No active access token found.");
+      return;
+    }
+
+    let payload;
+
+    try{
+      const base64=session.access_token.split(".")[1]
+        .replace(/-/g,"+")
+        .replace(/_/g,"/");
+
+      payload=JSON.parse(
+        atob(base64+"=".repeat((4-base64.length%4)%4))
+      );
+    }catch(decodeError){
+      alert("Could not decode JWT: "+decodeError.message);
+      return;
+    }
+
+    alert(
+      "JWT Role: "+(payload.role || "NOT FOUND")+
+      "\nJWT User ID: "+(payload.sub || "NOT FOUND")
+    );
+
     if(friendId===authUser.id){
       alert("You cannot open a chat with yourself.");
       return;
