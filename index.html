@@ -19,7 +19,7 @@ header{background:var(--wine2);color:white;padding:13px 17px;display:flex;justif
 .wrap{max-width:1000px;margin:auto;padding:16px}
 .panel{background:var(--white);border:1px solid #e8dfd1;border-radius:17px;padding:17px;margin-bottom:14px;box-shadow:0 7px 25px #39202b0b}
 h1,h2{font-family:'Cormorant Garamond',serif;color:var(--wine)}
-h1{font-size:31px;margin:0 0 4px}h2{font-size:24px;margin:0 0 13px}
+h1{font-size:29px;margin:0 0 4px}h2{font-size:22px;margin:0 0 13px}
 p{line-height:1.5}.muted{color:var(--muted);font-size:12px}
 input{width:100%;padding:12px;border:1px solid #e4d9ca;border-radius:11px;background:#fffdfa;outline:none;margin:6px 0}
 input:focus{border-color:var(--olive)}
@@ -63,7 +63,6 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
 .call-status{color:var(--muted);font-size:12px;margin:8px 0 15px}
 .call-buttons{display:flex;justify-content:center;gap:15px;flex-wrap:wrap;margin-top:17px}
 .call-control{width:51px;height:51px;border:0;border-radius:50%;display:grid;place-items:center;background:#e9e0d5;color:var(--wine)}
-.call-control svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .call-control.end{background:#b52e45;color:white}.call-control.accept{background:var(--olive);color:white}
 .call-control.active{background:var(--wine);color:white}
 .call-label{font-size:9px;color:var(--muted);margin-top:4px}
@@ -79,10 +78,12 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
 .modal-card{width:100%;max-width:430px;max-height:85vh;overflow:auto;background:var(--cream);border-radius:20px;padding:20px}
 .friend-check{display:flex;align-items:center;gap:10px;padding:9px;border-bottom:1px solid #e7ded1}
 .friend-check input{width:auto;margin:0}
-.unread{display:inline-block;width:8px;height:8px;border-radius:50%;background:#bd9147;margin-left:7px}
+.unread{display:inline-block;width:9px;height:9px;border-radius:50%;background:#bd9147;margin-left:7px;vertical-align:middle}
+.unread-count{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:20px;background:var(--wine);color:white;font-size:10px;margin-left:6px}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--wine2);color:white;padding:11px 17px;border-radius:12px;z-index:80;box-shadow:0 5px 25px #0003;font-size:12px;max-width:90%;text-align:center}
 .call-history-item{padding:11px 2px;border-bottom:1px solid #eee7dc;display:flex;gap:10px;align-items:center}
 .call-history-item:last-child{border:0}
+.notification-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 @media(min-width:700px){.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
 @media(max-width:430px){.wrap{padding:12px}.panel{padding:14px}.searchline{gap:5px}.searchline .btn{padding:10px}.chat-input{gap:5px}.chat-input .btn{padding:10px}.call-card{padding:16px}}
 </style>
@@ -117,6 +118,10 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
    <div class="avatar" id="myAvatar">D</div>
   </div>
  </div>
+ <div class="panel notification-row">
+  <div><strong style="color:var(--wine)">Message notifications</strong><div class="muted" id="notificationStatus">Turn on alerts while DAOOS is open.</div></div>
+  <button class="btn olive small" id="notificationButton" onclick="enableDAOOSNotifications()">Enable notifications</button>
+ </div>
  <div class="row" style="flex-wrap:wrap;margin-bottom:13px">
   <button class="btn olive" onclick="openGroupModal()">＋ Group call</button>
   <button class="btn light" onclick="showCalls()">☎ Calls</button>
@@ -143,7 +148,7 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
 <div id="chatView" class="hidden">
  <header>
   <div class="row">
-   <button class="back" onclick="backToDashboard()" style="background:none;border:0;color:white;font-size:23px">‹</button>
+   <button onclick="backToDashboard()" style="background:none;border:0;color:white;font-size:23px">‹</button>
    <div class="avatar" id="chatAvatar">D</div>
    <div><strong id="chatName">Friend</strong><div class="header-small">PRIVATE CHAT</div></div>
   </div>
@@ -172,7 +177,6 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
  </div>
 </div>
 
-<!-- GROUP CALL PICKER -->
 <div id="groupModal" class="call-overlay hidden">
  <div class="modal-card">
   <div class="row between"><h2>Start a group call</h2><button class="btn light small" onclick="closeGroupModal()">Close</button></div>
@@ -183,23 +187,21 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
  </div>
 </div>
 
-<!-- INCOMING CALL -->
 <div id="incomingCall" class="call-overlay hidden">
  <div class="call-card">
   <div class="call-avatar" id="incomingAvatar">D</div>
   <h2 id="incomingName">Incoming call</h2>
   <div class="call-status" id="incomingType">Incoming voice call</div>
   <div class="call-buttons">
-   <div><button class="call-control end" onclick="rejectCall()" aria-label="Decline">✕</button><div class="call-label">Decline</div></div>
-   <div><button class="call-control accept" onclick="acceptCall()" aria-label="Accept">✓</button><div class="call-label">Accept</div></div>
+   <div><button class="call-control end" onclick="rejectCall()">✕</button><div class="call-label">Decline</div></div>
+   <div><button class="call-control accept" onclick="acceptCall()">✓</button><div class="call-label">Accept</div></div>
   </div>
  </div>
 </div>
 
-<!-- ACTIVE CALL -->
 <div id="activeCall" class="call-overlay hidden">
  <div class="call-card">
-  <div id="audioStage" class="audio-stage"><div class="call-avatar" id="activeAvatar">D</div><h2 id="activeName">Friend</h2></div>
+  <div id="audioStage"><div class="call-avatar" id="activeAvatar">D</div><h2 id="activeName">Friend</h2></div>
   <div id="videoStage" class="video-stage hidden">
    <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
    <video id="localVideo" class="local-video" autoplay muted playsinline></video>
@@ -219,35 +221,53 @@ footer{text-align:center;padding:22px;color:#9a8b7d;font-size:10px;letter-spacin
 <div id="toast" class="toast hidden"></div>
 
 <script>
-/* DAOOS CONFIG */
 const SUPABASE_URL="https://odewqgpqeqzbieqrvywo.supabase.co";
 const SUPABASE_KEY="sb_publishable_lkHssrmtg4J2DrwOBAHO9w_HqNUwsBe";
 const MEDIA_BUCKET="daoos-media";
 const MAX_FILE_SIZE=25*1024*1024;
 
 if(!window.supabase){document.getElementById("authMessage").textContent="Could not load Supabase. Refresh and try again.";throw new Error("Supabase library missing");}
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
- auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-});
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 
 let currentUser=null,myProfile=null,authMode="login",activeConversation=null,activeFriend=null;
 let messageChannel=null,globalCallChannel=null,globalMessageChannel=null,appLoading=false;
-let friendProfiles=[],unreadCounts={};
+let friendProfiles=[],unreadCounts={},conversationFriendMap={};
 let peerConnections={},remoteStreams={},localStream=null,currentCall=null,incomingCallData=null;
 let pendingIce={},isMuted=false,isCameraOff=false,globalCallReady=false,incomingTimer=null;
-const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"}]};
 
+const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"}]};
 function el(id){return document.getElementById(id)}
 function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function initials(n){return(n||"D").trim().split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function avatarHTML(p={}){let n=p.display_name||p.username||"Friend";return p.avatar_url?`<div class="avatar"><img src="${escapeHTML(p.avatar_url)}" alt=""></div>`:`<div class="avatar">${escapeHTML(initials(n))}</div>`}
 function showMessage(id,msg,type="error"){el(id).innerHTML=`<div class="${type}">${escapeHTML(msg)}</div>`}
-function toast(msg){const t=el("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.add("hidden"),3200)}
+function toast(msg){const t=el("toast");t.textContent=msg;t.classList.remove("hidden");clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.add("hidden"),3500)}
 function profileName(p){return p?.display_name||p?.username||"DAOOS friend"}
 function safeCallId(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2)}
-function readKey(id){return "daoos-last-read-"+currentUser.id+"-"+id}
-function markRead(id){if(currentUser)localStorage.setItem(readKey(id),new Date().toISOString());unreadCounts[id]=0}
 function showAuth(mode){authMode=mode;el("nameField").classList.toggle("hidden",mode!=="signup");el("authBtn").textContent=mode==="signup"?"Create Account":"Log In";el("loginTab").className=mode==="login"?"btn":"btn light";el("signupTab").className=mode==="signup"?"btn":"btn light";el("authMessage").innerHTML=""}
+function showOnly(id){["authView","dashboard","chatView","callsView"].forEach(x=>el(x).classList.toggle("hidden",x!==id))}
+
+/* NOTIFICATIONS */
+async function enableDAOOSNotifications(){
+ if(!("Notification" in window)){
+  el("notificationStatus").textContent="This browser does not support browser notifications. In-app alerts will still work.";
+  return;
+ }
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission==="granted"){
+   el("notificationStatus").textContent="Notifications enabled on this browser.";
+   el("notificationButton").textContent="Enabled";
+   toast("DAOOS notifications enabled.");
+  }else{
+   el("notificationStatus").textContent="Permission not granted. You can still see alerts while DAOOS is open.";
+  }
+ }catch(e){el("notificationStatus").textContent="Could not enable browser notifications.";}
+}
+function browserNotify(title,body){
+ if(!("Notification" in window)||Notification.permission!=="granted"||document.visibilityState==="visible")return;
+ try{const n=new Notification(title,{body,tag:"daoos-message"});n.onclick=()=>{window.focus();n.close();};}catch(e){console.warn("Notification:",e);}
+}
 
 /* AUTH */
 async function authenticate(){
@@ -269,7 +289,6 @@ async function authenticate(){
  }catch(e){console.error(e);showMessage("authMessage",e.message||"Authentication failed.");}
  finally{el("authBtn").disabled=false;el("authBtn").textContent=authMode==="signup"?"Create Account":"Log In";}
 }
-
 async function loadApp(){
  if(appLoading)return;appLoading=true;
  try{
@@ -282,13 +301,18 @@ async function loadApp(){
   el("myAvatar").textContent=initials(profileName(myProfile));
   el("logoutBtn").style.display="block";
   showOnly("dashboard");
-  await Promise.all([loadFriends(),loadRequests()]);
+  await loadRequests();
   await loadUnreadCounts();
-  subscribeGlobalCalls();subscribeGlobalMessages();
+  await loadFriends();
+  subscribeGlobalCalls();
+  subscribeGlobalMessages();
+  if("Notification" in window&&Notification.permission==="granted"){
+   el("notificationStatus").textContent="Notifications enabled on this browser.";
+   el("notificationButton").textContent="Enabled";
+  }
  }catch(e){console.error(e);showMessage("authMessage",e.message||"Could not load DAOOS.");showOnly("authView");}
  finally{appLoading=false;}
 }
-function showOnly(id){["authView","dashboard","chatView","callsView"].forEach(x=>el(x).classList.toggle("hidden",x!==id))}
 async function logout(){
  try{
   await endCall(false);clearTimeout(incomingTimer);
@@ -296,7 +320,7 @@ async function logout(){
   if(globalCallChannel)await db.removeChannel(globalCallChannel);
   if(globalMessageChannel)await db.removeChannel(globalMessageChannel);
   const {error}=await db.auth.signOut();if(error)throw error;
-  currentUser=null;myProfile=null;activeConversation=null;activeFriend=null;
+  currentUser=null;myProfile=null;activeConversation=null;activeFriend=null;unreadCounts={};conversationFriendMap={};
   showOnly("authView");el("logoutBtn").style.display="none";el("password").value="";
  }catch(e){alert("Logout error: "+e.message);}
 }
@@ -328,7 +352,7 @@ async function loadRequests(){
 }
 async function respondRequest(id,status){
  const {error}=await db.from("friend_requests").update({status}).eq("id",id);
- if(error){alert(error.message);return;}await loadRequests();await loadFriends();
+ if(error){alert(error.message);return;}await loadRequests();await loadUnreadCounts();await loadFriends();
 }
 async function getFriendIds(){
  const [a,b]=await Promise.all([
@@ -338,16 +362,67 @@ async function getFriendIds(){
  if(a.error||b.error)throw a.error||b.error;
  return [...new Set([...(a.data||[]).map(x=>x.receiver_id),...(b.data||[]).map(x=>x.sender_id)])];
 }
+
+/* READ STATUS — STORED IN SUPABASE */
+async function markConversationRead(conversationId){
+ if(!currentUser||!conversationId)return;
+ const now=new Date().toISOString();
+ const {error}=await db.from("conversation_reads").upsert({
+  conversation_id:conversationId,
+  user_id:currentUser.id,
+  last_read_at:now
+ },{onConflict:"conversation_id,user_id"});
+ if(error){console.warn("Could not update read status:",error.message);return;}
+ unreadCounts[conversationId]=0;
+}
+async function loadUnreadCounts(){
+ if(!currentUser)return;
+ try{
+  const {data:mem,error}=await db.from("conversation_members").select("conversation_id").eq("user_id",currentUser.id);
+  if(error)throw error;
+  const ids=[...new Set((mem||[]).map(x=>x.conversation_id))];
+  unreadCounts={};
+  if(!ids.length)return;
+  const {data:reads,error:readError}=await db.from("conversation_reads").select("conversation_id,last_read_at").eq("user_id",currentUser.id).in("conversation_id",ids);
+  if(readError)throw readError;
+  const readMap={};(reads||[]).forEach(r=>readMap[r.conversation_id]=r.last_read_at);
+  for(const id of ids){
+   if(id===activeConversation)continue;
+   let q=db.from("messages").select("id",{count:"exact",head:true})
+    .eq("conversation_id",id).neq("sender_id",currentUser.id);
+   if(readMap[id])q=q.gt("created_at",readMap[id]);
+   const result=await q;
+   if(result.error)throw result.error;
+   if(result.count>0)unreadCounts[id]=result.count;
+  }
+ }catch(e){console.warn("Unread count:",e.message);}
+}
 async function loadFriends(){
  if(!currentUser)return;
  try{
   const ids=await getFriendIds();
-  if(!ids.length){friendProfiles=[];el("friendsList").innerHTML='<div class="empty">Your circle is waiting. Search for friends to get started.</div>';return;}
+  if(!ids.length){friendProfiles=[];conversationFriendMap={};el("friendsList").innerHTML='<div class="empty">Your circle is waiting. Search for friends to get started.</div>';return;}
   const {data,error}=await db.from("profiles").select("*").in("id",ids);if(error)throw error;
   friendProfiles=data||[];
+  conversationFriendMap={};
+  const {data:mem,error:me}=await db.from("conversation_members").select("conversation_id").eq("user_id",currentUser.id);
+  if(me)throw me;
+  const {data:hidden,error:he}=await db.from("conversation_hidden").select("conversation_id").eq("user_id",currentUser.id);
+  if(he)throw he;
+  const hiddenIds=new Set((hidden||[]).map(x=>x.conversation_id));
+  for(const m of mem||[]){
+   if(hiddenIds.has(m.conversation_id))continue;
+   const {data:c,error:ce}=await db.from("conversations").select("id,is_group").eq("id",m.conversation_id).maybeSingle();
+   if(ce)throw ce;if(!c||c.is_group)continue;
+   const {data:members,error:memberError}=await db.from("conversation_members").select("user_id").eq("conversation_id",m.conversation_id);
+   if(memberError)throw memberError;
+   if(members?.length!==2)continue;
+   const other=members.find(x=>x.user_id!==currentUser.id)?.user_id;
+   if(other&&ids.includes(other))conversationFriendMap[other]=m.conversation_id;
+  }
   el("friendsList").innerHTML=friendProfiles.map(p=>{
-   const unread=unreadCounts[p.id]||0;
-   return `<div class="person" style="cursor:pointer" onclick="openChat('${p.id}')">${avatarHTML(p)}<div class="person-info"><strong>${escapeHTML(profileName(p))}${unread?'<span class="unread"></span>':""}</strong><small>${unread?unread+" unread message(s)":"Tap to open chat"}</small></div><span style="color:var(--gold);font-size:20px">›</span></div>`;
+   const conv=conversationFriendMap[p.id],unread=conv?(unreadCounts[conv]||0):0;
+   return `<div class="person" style="cursor:pointer" onclick="openChat('${p.id}')">${avatarHTML(p)}<div class="person-info"><strong>${escapeHTML(profileName(p))}${unread?'<span class="unread"></span>':""}</strong><small>${unread?unread+" unread message(s)":"Tap to open chat"}</small></div>${unread?`<span class="unread-count">${unread>99?"99+":unread}</span>`:""}<span style="color:var(--gold);font-size:20px">›</span></div>`;
   }).join("");
  }catch(e){el("friendsList").textContent=e.message;}
 }
@@ -368,20 +443,23 @@ async function openChat(friendId){
   let found=null;
   for(const m of members||[]){
    if(hiddenIds.has(m.conversation_id))continue;
+   const {data:c,error:ce}=await db.from("conversations").select("*").eq("id",m.conversation_id).eq("is_group",false).maybeSingle();if(ce)throw ce;
+   if(!c)continue;
    const {data:ms,error}=await db.from("conversation_members").select("user_id").eq("conversation_id",m.conversation_id);if(error)throw error;
    const ids=ms.map(x=>x.user_id);
-   if(ids.length===2&&ids.includes(friendId)&&ids.includes(currentUser.id)){
-    const {data:c,error:ce}=await db.from("conversations").select("*").eq("id",m.conversation_id).eq("is_group",false).maybeSingle();if(ce)throw ce;
-    if(c){found=c;break;}
-   }
+   if(ids.length===2&&ids.includes(friendId)&&ids.includes(currentUser.id)){found=c;break;}
   }
   if(!found){
    const {data:id,error}=await db.rpc("daoos_create_private_conversation",{friend_uuid:friendId});
    if(error)throw new Error("Conversation creation failed: "+error.message);found={id,is_group:false};
   }
-  activeConversation=found.id;markRead(activeConversation);
+  activeConversation=found.id;
   el("mediaStatus").textContent="";
-  await loadMessages();subscribeMessages();await loadFriends();
+  await loadMessages();
+  await markConversationRead(activeConversation);
+  subscribeMessages();
+  await loadUnreadCounts();
+  await loadFriends();
  }catch(e){console.error(e);alert(e.message||"Could not open chat.");showOnly("dashboard");activeConversation=null;activeFriend=null;}
 }
 async function closeChatSubscriptions(){if(messageChannel){await db.removeChannel(messageChannel);messageChannel=null;}}
@@ -439,8 +517,8 @@ async function uploadMedia(event){
 function subscribeMessages(){
  if(messageChannel)db.removeChannel(messageChannel);
  const id=activeConversation;
- messageChannel=db.channel("daoos-chat-"+id).on("postgres_changes",{event:"*",schema:"public",table:"messages",filter:"conversation_id=eq."+id},()=>{
-  if(activeConversation===id){markRead(id);loadMessages();}
+ messageChannel=db.channel("daoos-chat-"+id).on("postgres_changes",{event:"*",schema:"public",table:"messages",filter:"conversation_id=eq."+id},async()=>{
+  if(activeConversation===id){await loadMessages();await markConversationRead(id);}
  }).subscribe();
 }
 async function deleteMessage(messageId){
@@ -462,8 +540,11 @@ async function deleteChat(){
 }
 async function unfriend(){
  if(!activeFriend||!confirm("Unfriend this person? The friendship will be removed for both accounts."))return;
- const {error}=await db.rpc("daoos_unfriend",{friend_uuid:activeFriend.id});
+ const friendId=activeFriend.id;
+ const {error}=await db.rpc("daoos_unfriend",{friend_uuid:friendId});
  if(error){alert(error.message);return;}
+ const conv=activeConversation;
+ if(conv)await db.from("conversation_hidden").upsert({conversation_id:conv,user_id:currentUser.id},{onConflict:"conversation_id,user_id"});
  await backToDashboard();await loadFriends();toast("Friend removed.");
 }
 function chatMenu(){
@@ -471,27 +552,28 @@ function chatMenu(){
  if(choice==="1")deleteChat();else if(choice==="2")unfriend();
 }
 
-/* UNREAD COUNTS + FOREGROUND MESSAGE ALERTS */
-async function loadUnreadCounts(){
- if(!currentUser)return;
- try{
-  const {data:mem,error:me}=await db.from("conversation_members").select("conversation_id").eq("user_id",currentUser.id);if(me)throw me;
-  const ids=(mem||[]).map(x=>x.conversation_id);unreadCounts={};
-  if(!ids.length)return;
-  const {data,error}=await db.from("messages").select("conversation_id,sender_id,created_at").in("conversation_id",ids).neq("sender_id",currentUser.id).order("created_at",{ascending:false}).limit(500);if(error)throw error;
-  for(const m of data||[]){
-   const last=localStorage.getItem(readKey(m.conversation_id));
-   if(!last||new Date(m.created_at)>new Date(last))unreadCounts[m.conversation_id]=(unreadCounts[m.conversation_id]||0)+1;
-  }
- }catch(e){console.warn("Unread count:",e.message);}
-}
+/* LIVE MESSAGE ALERTS */
 function subscribeGlobalMessages(){
  if(globalMessageChannel)db.removeChannel(globalMessageChannel);
  globalMessageChannel=db.channel("daoos-all-messages-"+currentUser.id)
- .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>{
-  const m=payload.new;if(!m||m.sender_id===currentUser.id)return;
-  if(m.conversation_id===activeConversation){markRead(activeConversation);loadMessages();}
-  else{unreadCounts[m.conversation_id]=(unreadCounts[m.conversation_id]||0)+1;loadFriends();toast("You have a new message.");}
+ .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},async payload=>{
+  const m=payload.new;
+  if(!m||m.sender_id===currentUser.id)return;
+  if(m.conversation_id===activeConversation){
+   await loadMessages();
+   await markConversationRead(activeConversation);
+   return;
+  }
+  await loadUnreadCounts();
+  await loadFriends();
+  let senderName="New message";
+  try{
+   const {data:p}=await db.from("profiles").select("display_name,username").eq("id",m.sender_id).maybeSingle();
+   if(p)senderName=profileName(p);
+  }catch(e){}
+  const messageText=m.media_path?"Sent a photo or video":(m.body||"Sent you a message");
+  toast(senderName+": "+messageText);
+  browserNotify(senderName,messageText);
  }).subscribe();
 }
 
@@ -523,7 +605,7 @@ async function showCalls(){
   return `<div class="call-history-item"><div class="avatar">${escapeHTML(initials(profileName(p)))}</div><div class="person-info"><strong>${escapeHTML(profileName(p))}</strong><small>${incoming?"Incoming":"Outgoing"} · ${c.call_type==="video"?"Video":"Voice"} · ${label}<br>${new Date(c.created_at).toLocaleString()}</small></div><span>${c.call_type==="video"?"▣":"☎"}</span></div>`;
  }).join("");
 }
-function backFromCalls(){showOnly("dashboard");loadFriends();}
+function backFromCalls(){showOnly("dashboard");loadUnreadCounts().then(loadFriends);}
 
 /* GLOBAL INCOMING CALL SIGNALS */
 function subscribeGlobalCalls(){
@@ -582,7 +664,7 @@ async function startCall(type){
  }catch(e){console.error(e);alert("Could not start call: "+e.message);await endCall(false);}
 }
 
-/* WEBRTC PEER CONNECTIONS */
+/* WEBRTC */
 function createPeer(peerId,isGroup){
  if(peerConnections[peerId]){peerConnections[peerId].close();delete peerConnections[peerId];}
  const pc=new RTCPeerConnection(rtcConfig);peerConnections[peerId]=pc;pendingIce[peerId]=[];
@@ -594,8 +676,7 @@ function createPeer(peerId,isGroup){
  };
  pc.onicecandidate=ev=>{
   if(ev.candidate&&currentCall){
-   const type=isGroup?"group_ice":"ice";
-   sendCallSignal(peerId,{type,callId:currentCall.id,candidate:ev.candidate},currentCall.conversationId).catch(e=>console.warn(e));
+   sendCallSignal(peerId,{type:isGroup?"group_ice":"ice",callId:currentCall.id,candidate:ev.candidate},currentCall.conversationId).catch(e=>console.warn(e));
   }
  };
  pc.onconnectionstatechange=()=>{
@@ -636,7 +717,7 @@ async function flushIce(peerId){
  pendingIce[peerId]=[];
 }
 
-/* INCOMING SIGNAL HANDLER */
+/* SIGNAL HANDLER */
 async function handleCallSignal(row){
  if(!row||!currentUser||row.receiver_id!==currentUser.id)return;
  const s=row.signal||{};if(!s.type||!s.callId)return;
@@ -664,9 +745,7 @@ async function handleCallSignal(row){
   if(s.type==="busy"){el("callStatus").textContent="Your friend is busy";setTimeout(()=>endCall(false),1200);}
   if(s.type==="missed"){el("callStatus").textContent="No answer";setTimeout(()=>endCall(false),1200);}
   if(s.type==="hangup"){el("callStatus").textContent="Call ended";setTimeout(()=>endCall(false),700);}
-  if(s.type==="group_joined"&&currentCall.group){
-   if(!peerConnections[peer])await createGroupOffer(peer);
-  }
+  if(s.type==="group_joined"&&currentCall.group){if(!peerConnections[peer])await createGroupOffer(peer);}
   if(s.type==="group_offer"&&currentCall.group){
    let pc=peerConnections[peer]||createPeer(peer,true);
    localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
@@ -737,9 +816,7 @@ async function startGroupCall(){
   closeGroupModal();showActiveCall(type,"Calling your friends...",true);
   localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:type==="video"?{facingMode:"user"}:false});
   el("localVideo").srcObject=localStream;
-  for(const friendId of selected){
-   await sendCallSignal(friendId,{type:"group_invite",callId:id,callType:type,memberIds:members},conv);
-  }
+  for(const friendId of selected)await sendCallSignal(friendId,{type:"group_invite",callId:id,callType:type,memberIds:members},conv);
   el("callStatus").textContent="Group call invitation sent. Waiting for friends...";
  }catch(e){console.error(e);el("groupPickStatus").textContent=e.message;alert("Could not start group call: "+e.message);await endCall(false);}
 }
@@ -755,7 +832,7 @@ function closePeer(peer){
  const tile=el("peer-"+peer);if(tile)tile.remove();delete pendingIce[peer];
 }
 
-/* CALL UI + CONTROLS */
+/* CALL UI */
 function showActiveCall(type,status,group){
  el("incomingCall").classList.add("hidden");el("activeCall").classList.remove("hidden");
  el("activeName").textContent=group?"DAOOS Group Call":profileName(activeFriend);
@@ -789,15 +866,16 @@ async function endCall(notify=true){
  isMuted=false;isCameraOff=false;return true;
 }
 
-/* DASHBOARD NAVIGATION */
+/* NAVIGATION */
 async function backToDashboard(){
  if(currentCall)await endCall(true);
  if(incomingCallData)await rejectCall();
  await closeChatSubscriptions();activeConversation=null;activeFriend=null;
- showOnly("dashboard");await loadFriends();await loadUnreadCounts();
+ showOnly("dashboard");
+ await loadUnreadCounts();
+ await loadFriends();
 }
-async function backFromCalls(){showOnly("dashboard");await loadFriends();}
-async function deleteChatAndUnfriendPlaceholder(){}
+function backFromCalls(){showOnly("dashboard");loadUnreadCounts().then(loadFriends);}
 
 /* INITIALIZE */
 (async function initializeDAOOS(){
