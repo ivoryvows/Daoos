@@ -1,0 +1,11 @@
+
+{
+  "name": "DAOOS — Private Circle",
+  "short_name": "DAOOS",
+  "start_url": "/Daoos/",
+  "scope": "/Daoos/",
+  "display": "standalone",
+  "background_color": "#652B3D",
+  "theme_color": "#652B3D",
+  "description": "Private messaging and calls"
+}
