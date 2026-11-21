@@ -1,0 +1,650 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#652B3D">
+<title>DAOOS — Private Connections</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --burgundy:#652B3D;
+  --burgundy-dark:#351722;
+  --olive:#596747;
+  --gold:#D4BD8C;
+  --cream:#F8F4EC;
+  --white:#FFFDF9;
+  --muted:#8D827D;
+}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  min-height:100vh;
+  font-family:'DM Sans',sans-serif;
+  background:var(--cream);
+  color:var(--burgundy-dark);
+}
+
+button,input { font:inherit; }
+
+button { cursor:pointer; }
+
+.screen {
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:22px;
+}
+
+.auth-card {
+  width:100%;
+  max-width:410px;
+  background:var(--white);
+  border:1px solid #E9DFD2;
+  border-radius:28px;
+  padding:34px 25px;
+  box-shadow:0 18px 55px #35172212;
+}
+
+.logo {
+  text-align:center;
+  margin-bottom:28px;
+}
+
+.logo-mark {
+  width:66px;
+  height:66px;
+  margin:auto;
+  border-radius:22px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,var(--burgundy),var(--burgundy-dark));
+  color:var(--gold);
+  font-family:'Playfair Display',serif;
+  font-size:34px;
+  box-shadow:0 8px 22px #652B3D30;
+}
+
+.logo h1 {
+  font-family:'Playfair Display',serif;
+  font-size:36px;
+  letter-spacing:5px;
+  margin:13px 0 3px;
+  color:var(--burgundy);
+}
+
+.logo p {
+  font-size:10px;
+  letter-spacing:3px;
+  color:var(--olive);
+  margin:0;
+}
+
+.welcome {
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.welcome h2 {
+  font-family:'Playfair Display',serif;
+  font-size:25px;
+  margin:0 0 7px;
+  color:var(--burgundy-dark);
+}
+
+.welcome p {
+  font-size:13px;
+  color:var(--muted);
+  margin:0;
+}
+
+.tabs {
+  display:flex;
+  background:#F1ECE5;
+  padding:5px;
+  border-radius:13px;
+  margin-bottom:22px;
+}
+
+.tabs button {
+  flex:1;
+  border:0;
+  background:transparent;
+  padding:12px;
+  border-radius:10px;
+  color:var(--muted);
+  font-weight:600;
+}
+
+.tabs button.active {
+  background:var(--burgundy);
+  color:white;
+  box-shadow:0 4px 12px #652B3D25;
+}
+
+.field { margin-bottom:15px; }
+
+.field label {
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:8px;
+  color:var(--burgundy-dark);
+}
+
+.field input {
+  width:100%;
+  border:1px solid #E5DCD1;
+  border-radius:12px;
+  padding:14px;
+  background:#FFFEFC;
+  outline:none;
+  color:var(--burgundy-dark);
+}
+
+.field input:focus {
+  border-color:var(--olive);
+  box-shadow:0 0 0 3px #59674716;
+}
+
+.primary {
+  width:100%;
+  border:0;
+  border-radius:13px;
+  padding:15px;
+  margin-top:7px;
+  background:linear-gradient(110deg,var(--burgundy),#82465A);
+  color:white;
+  font-weight:700;
+  box-shadow:0 7px 18px #652B3D25;
+}
+
+.primary:disabled {
+  opacity:.6;
+  cursor:wait;
+}
+
+.message {
+  display:none;
+  padding:12px;
+  border-radius:10px;
+  margin-top:15px;
+  font-size:12px;
+  line-height:1.5;
+  background:#F3EEE5;
+  color:var(--burgundy-dark);
+  overflow-wrap:anywhere;
+}
+
+.message.show { display:block; }
+
+.message.error {
+  background:#FBE9E9;
+  color:#9A3434;
+}
+
+.message.success {
+  background:#EAF1E5;
+  color:#405C36;
+}
+
+.small-note {
+  text-align:center;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.6;
+  margin-top:22px;
+}
+
+#home {
+  display:none;
+  min-height:100vh;
+  background:var(--cream);
+}
+
+.topbar {
+  background:var(--burgundy-dark);
+  color:white;
+  padding:20px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.top-brand {
+  font-family:'Playfair Display',serif;
+  font-size:25px;
+  letter-spacing:4px;
+  color:var(--gold);
+}
+
+.logout {
+  border:1px solid #D4BD8C70;
+  color:var(--gold);
+  background:transparent;
+  border-radius:20px;
+  padding:9px 14px;
+  font-size:12px;
+}
+
+.home-content {
+  max-width:750px;
+  padding:28px 20px;
+  margin:auto;
+}
+
+.hero {
+  background:linear-gradient(135deg,#652B3D,#3C202C);
+  color:white;
+  border-radius:24px;
+  padding:28px 23px;
+  position:relative;
+  overflow:hidden;
+}
+
+.hero:after {
+  content:"✦";
+  position:absolute;
+  right:22px;
+  top:15px;
+  font-size:75px;
+  color:#D4BD8C25;
+}
+
+.hero .eyebrow {
+  color:var(--gold);
+  font-size:10px;
+  letter-spacing:3px;
+}
+
+.hero h2 {
+  font-family:'Playfair Display',serif;
+  font-size:29px;
+  margin:12px 0 8px;
+}
+
+.hero p {
+  color:#E9DDE0;
+  font-size:13px;
+  line-height:1.6;
+  max-width:270px;
+}
+
+.section-title {
+  font-family:'Playfair Display',serif;
+  font-size:23px;
+  margin:30px 0 14px;
+}
+
+.feature {
+  background:var(--white);
+  border:1px solid #E9DFD2;
+  border-radius:17px;
+  padding:19px;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.feature-icon {
+  width:45px;
+  height:45px;
+  flex-shrink:0;
+  border-radius:14px;
+  display:grid;
+  place-items:center;
+  font-size:21px;
+  background:#F0E9DE;
+}
+
+.feature h3 {
+  margin:0 0 4px;
+  font-size:14px;
+  color:var(--burgundy);
+}
+
+.feature p {
+  margin:0;
+  color:var(--muted);
+  font-size:11px;
+}
+
+.coming {
+  margin-left:auto;
+  font-size:9px;
+  letter-spacing:1px;
+  color:var(--olive);
+  font-weight:700;
+}
+
+.user-card {
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:17px;
+  margin-top:20px;
+  border-radius:17px;
+  background:#EAEDE4;
+}
+
+.avatar {
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  background:var(--olive);
+  color:white;
+  display:grid;
+  place-items:center;
+  font-family:'Playfair Display',serif;
+  font-size:20px;
+}
+
+.user-card strong { font-size:13px; }
+.user-card p { margin:4px 0 0; font-size:11px; color:var(--muted); }
+
+.footer {
+  text-align:center;
+  padding:25px;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:2px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="screen" id="authScreen">
+  <div class="auth-card">
+
+    <div class="logo">
+      <div class="logo-mark">D</div>
+      <h1>DAOOS</h1>
+      <p>PRIVATE CONNECTIONS</p>
+    </div>
+
+    <div class="welcome">
+      <h2 id="heading">Welcome back</h2>
+      <p id="subheading">Your people, your private space.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="active" id="loginTab" onclick="setMode('login')">Login</button>
+      <button id="signupTab" onclick="setMode('signup')">Sign Up</button>
+    </div>
+
+    <form id="authForm">
+
+      <div class="field" id="nameField" style="display:none">
+        <label>Full name</label>
+        <input id="fullName" type="text" placeholder="Your name" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label>Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="At least 6 characters" required minlength="6" autocomplete="current-password">
+      </div>
+
+      <button class="primary" id="submitButton" type="submit">Login to DAOOS</button>
+      <div class="message" id="authMessage"></div>
+
+    </form>
+
+    <div class="small-note">
+      A private space for the people who matter.<br>
+      Made for meaningful connections.
+    </div>
+
+  </div>
+</div>
+
+<div id="home">
+
+  <header class="topbar">
+    <div class="top-brand">DAOOS</div>
+    <button class="logout" onclick="logout()">Log out ↗</button>
+  </header>
+
+  <main class="home-content">
+
+    <section class="hero">
+      <div class="eyebrow">YOUR PRIVATE SPACE</div>
+      <h2 id="greeting">Hello!</h2>
+      <p>Stay close to your favourite people, wherever life takes you.</p>
+    </section>
+
+    <div class="user-card">
+      <div class="avatar" id="userAvatar">D</div>
+      <div>
+        <strong id="userName">DAOOS Member</strong>
+        <p id="userEmail">Your account</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">Your connections</h2>
+
+    <div class="feature">
+      <div class="feature-icon">💬</div>
+      <div>
+        <h3>Private Messages</h3>
+        <p>Your personal conversations</p>
+      </div>
+      <span class="coming">NEXT</span>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">👥</div>
+      <div>
+        <h3>Friends</h3>
+        <p>Find and connect with people</p>
+      </div>
+      <span class="coming">NEXT</span>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">📷</div>
+      <div>
+        <h3>Photos & Videos</h3>
+        <p>Share your favourite moments</p>
+      </div>
+      <span class="coming">NEXT</span>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">📞</div>
+      <div>
+        <h3>Voice & Video Calls</h3>
+        <p>Talk face to face</p>
+      </div>
+      <span class="coming">NEXT</span>
+    </div>
+
+    <div class="footer">DAOOS · PRIVATE CONNECTIONS</div>
+
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+
+let supabaseClient = null;
+let mode = "login";
+
+const authScreen = document.getElementById("authScreen");
+const home = document.getElementById("home");
+const authMessage = document.getElementById("authMessage");
+
+function showMessage(text, type) {
+  authMessage.textContent = text;
+  authMessage.className = "message show " + (type || "");
+}
+
+function setMode(newMode) {
+  mode = newMode;
+
+  document.getElementById("loginTab").classList.toggle("active", mode === "login");
+  document.getElementById("signupTab").classList.toggle("active", mode === "signup");
+
+  document.getElementById("nameField").style.display =
+    mode === "signup" ? "block" : "none";
+
+  document.getElementById("heading").textContent =
+    mode === "signup" ? "Create your account" : "Welcome back";
+
+  document.getElementById("subheading").textContent =
+    mode === "signup" ? "Join your private space." : "Your people, your private space.";
+
+  document.getElementById("submitButton").textContent =
+    mode === "signup" ? "Create Account" : "Login to DAOOS";
+
+  document.getElementById("password").autocomplete =
+    mode === "signup" ? "new-password" : "current-password";
+
+  authMessage.className = "message";
+}
+
+function showHome(user) {
+  const name =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email?.split("@")[0] ||
+    "DAOOS Member";
+
+  authScreen.style.display = "none";
+  home.style.display = "block";
+
+  document.getElementById("greeting").textContent = "Hello, " + name + "!";
+  document.getElementById("userName").textContent = name;
+  document.getElementById("userEmail").textContent = user.email || "";
+  document.getElementById("userAvatar").textContent =
+    name.charAt(0).toUpperCase();
+}
+
+function showAuth() {
+  home.style.display = "none";
+  authScreen.style.display = "flex";
+}
+
+async function logout() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  showAuth();
+}
+
+document.getElementById("authForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  if (!supabaseClient) {
+    showMessage("Please add your Supabase project URL and anon key first.", "error");
+    return;
+  }
+
+  const button = document.getElementById("submitButton");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const fullName = document.getElementById("fullName").value.trim();
+
+  button.disabled = true;
+  button.textContent = "Please wait...";
+  authMessage.className = "message";
+
+  try {
+    if (mode === "signup") {
+      if (!fullName) {
+        throw new Error("Please enter your full name.");
+      }
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.session) {
+        showHome(data.user);
+      } else {
+        showMessage("Account created! Please check your email to confirm your account, then log in.", "success");
+      }
+
+    } else {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+      showHome(data.user);
+    }
+
+  } catch (error) {
+    showMessage(error.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = mode === "signup" ? "Create Account" : "Login to DAOOS";
+  }
+});
+
+async function startApp() {
+  if (
+    SUPABASE_URL.includes("PASTE_YOUR") ||
+    SUPABASE_ANON_KEY.includes("PASTE_YOUR")
+  ) {
+    return;
+  }
+
+  if (!window.supabase) {
+    showMessage("Could not load the authentication service. Please refresh.", "error");
+    return;
+  }
+
+  supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  const { data } = await supabaseClient.auth.getSession();
+
+  if (data.session) {
+    showHome(data.session.user);
+  }
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session) {
+      showHome(session.user);
+    }
+
+    if (event === "SIGNED_OUT") {
+      showAuth();
+    }
+  });
+}
+
+startApp();
+</script>
+
+</body>
+</html>
