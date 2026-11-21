@@ -247,23 +247,107 @@ function safeCallId(){return crypto.randomUUID?crypto.randomUUID():Date.now()+"-
 function showAuth(mode){authMode=mode;el("nameField").classList.toggle("hidden",mode!=="signup");el("authBtn").textContent=mode==="signup"?"Create Account":"Log In";el("loginTab").className=mode==="login"?"btn":"btn light";el("signupTab").className=mode==="signup"?"btn":"btn light";el("authMessage").innerHTML=""}
 function showOnly(id){["authView","dashboard","chatView","callsView"].forEach(x=>el(x).classList.toggle("hidden",x!==id))}
 
-/* NOTIFICATIONS */
+/* PUSH NOTIFICATIONS */
+const VAPID_PUBLIC_KEY="BLwz0PE5_RZWV3IASzOFWGr-JXQjywYS4cELvOJjJjNgWyBbPtnE_fxzckMHMxsRU3wM0uYLSuiEgQw5u7miUsI";
+
+function urlBase64ToUint8Array(value){
+ const padding="=".repeat((4-value.length%4)%4);
+ const base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/");
+ const raw=atob(base64);
+ return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
 async function enableDAOOSNotifications(){
- if(!("Notification" in window)){
-  el("notificationStatus").textContent="This browser does not support browser notifications. In-app alerts will still work.";
+ if(!currentUser){
+  el("notificationStatus").textContent="Please log in first.";
+  return;
+ }
+ if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){
+  el("notificationStatus").textContent="Push notifications are not supported in this browser. On iPhone, open DAOOS from its Home Screen icon.";
   return;
  }
  try{
+  el("notificationButton").disabled=true;
+  el("notificationStatus").textContent="Enabling notifications...";
   const permission=await Notification.requestPermission();
-  if(permission==="granted"){
-   el("notificationStatus").textContent="Notifications enabled on this browser.";
-   el("notificationButton").textContent="Enabled";
-   toast("DAOOS notifications enabled.");
-  }else{
-   el("notificationStatus").textContent="Permission not granted. You can still see alerts while DAOOS is open.";
+  if(permission!=="granted"){
+   el("notificationStatus").textContent="Permission not granted. Enable notifications in iPhone Settings and try again.";
+   return;
   }
- }catch(e){el("notificationStatus").textContent="Could not enable browser notifications.";}
+  const registration=await navigator.serviceWorker.register("/Daoos/sw.js",{scope:"/Daoos/"});
+  await navigator.serviceWorker.ready;
+  let subscription=await registration.pushManager.getSubscription();
+  if(!subscription){
+   subscription=await registration.pushManager.subscribe({
+    userVisibleOnly:true,
+    applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+   });
+  }
+  const {error}=await db.from("push_subscriptions").upsert({
+   user_id:currentUser.id,
+   endpoint:subscription.endpoint,
+   subscription:subscription.toJSON()
+  },{onConflict:"endpoint"});
+  if(error)throw error;
+  el("notificationStatus").textContent="Push notifications are enabled on this device.";
+  el("notificationButton").textContent="Enabled";
+  toast("DAOOS push notifications enabled.");
+ }catch(e){
+  console.error("Push setup:",e);
+  el("notificationStatus").textContent="Could not enable push notifications: "+(e.message||"Please try again.");
+ }finally{
+  el("notificationButton").disabled=false;
+ }
 }
+
+async function sendPushNotification({conversationId,recipientIds,type="message",title,body,callId=null}){
+ try{
+  if(!currentUser||!conversationId||!recipientIds?.length)return;
+  const {data,error}=await db.functions.invoke("daoos-push",{body:{
+   conversation_id:conversationId,
+   recipient_ids:recipientIds.filter(id=>id&&id!==currentUser.id),
+   type,
+   title:title||"DAOOS",
+   body:body||"You have a new notification.",
+   call_id:callId
+  }});
+  if(error)throw error;
+  return data;
+ }catch(e){console.warn("Push notification could not be sent:",e.message||e);}
+}
+
+async function notifyConversationMembers(conversationId,type,title,body,callId=null){
+ try{
+  const {data,error}=await db.from("conversation_members").select("user_id").eq("conversation_id",conversationId);
+  if(error)throw error;
+  const recipients=(data||[]).map(x=>x.user_id).filter(id=>id!==currentUser?.id);
+  if(recipients.length)await sendPushNotification({conversationId,recipientIds:recipients,type,title,body,callId});
+ }catch(e){console.warn("Could not find notification recipients:",e.message||e);}
+}
+
+async function processIncomingCallLink(){
+ const params=new URLSearchParams(location.search);
+ const callId=params.get("incoming_call");
+ const conversationId=params.get("conversation_id");
+ if(!callId||!conversationId||!currentUser)return;
+ try{
+  const {data,error}=await db.from("call_signals").select("*")
+   .eq("receiver_id",currentUser.id)
+   .eq("conversation_id",conversationId)
+   .order("created_at",{ascending:false})
+   .limit(30);
+  if(error)throw error;
+  const row=(data||[]).find(x=>x.signal?.callId===callId&&["offer","group_invite"].includes(x.signal?.type));
+  if(row)await handleCallSignal(row);
+  else toast("This incoming call may have already ended.");
+ }catch(e){console.warn("Could not open incoming call:",e.message||e);}
+ finally{
+  params.delete("incoming_call");params.delete("conversation_id");
+  const query=params.toString();
+  history.replaceState({},document.title,location.pathname+(query?"?"+query:"")+location.hash);
+ }
+}
+
 function browserNotify(title,body){
  if(!("Notification" in window)||Notification.permission!=="granted"||document.visibilityState==="visible")return;
  try{const n=new Notification(title,{body,tag:"daoos-message"});n.onclick=()=>{window.focus();n.close();};}catch(e){console.warn("Notification:",e);}
@@ -307,9 +391,10 @@ async function loadApp(){
   subscribeGlobalCalls();
   subscribeGlobalMessages();
   if("Notification" in window&&Notification.permission==="granted"){
-   el("notificationStatus").textContent="Notifications enabled on this browser.";
-   el("notificationButton").textContent="Enabled";
+   el("notificationStatus").textContent="Notifications permission granted. Push setup may still need enabling on this device.";
+   el("notificationButton").textContent="Enable push";
   }
+  await processIncomingCallLink();
  }catch(e){console.error(e);showMessage("authMessage",e.message||"Could not load DAOOS.");showOnly("authView");}
  finally{appLoading=false;}
 }
@@ -817,6 +902,7 @@ async function startGroupCall(){
   localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:type==="video"?{facingMode:"user"}:false});
   el("localVideo").srcObject=localStream;
   for(const friendId of selected)await sendCallSignal(friendId,{type:"group_invite",callId:id,callType:type,memberIds:members},conv);
+  await sendPushNotification({conversationId:conv,recipientIds:selected,type:"call",title:profileName(myProfile),body:"Incoming group "+(type==="video"?"video":"voice")+" call",callId:id});
   el("callStatus").textContent="Group call invitation sent. Waiting for friends...";
  }catch(e){console.error(e);el("groupPickStatus").textContent=e.message;alert("Could not start group call: "+e.message);await endCall(false);}
 }
