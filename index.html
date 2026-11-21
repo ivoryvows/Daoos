@@ -451,7 +451,14 @@ async function openChat(friendId){
     }
 
     currentUser=authUser;
+const {data:{session},error:sessionError}=await db.auth.getSession();
 
+alert(
+  "User ID: "+authUser.id+
+  "\nSession User ID: "+(session?.user?.id || "NO SESSION")+
+  "\nToken: "+(session?.access_token ? "PRESENT" : "MISSING")+
+  "\nSession Error: "+(sessionError?.message || "None")
+);
     if(friendId===authUser.id){
       alert("You cannot open a chat with yourself.");
       return;
