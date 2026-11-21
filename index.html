@@ -17,6 +17,7 @@
 body{margin:0;background:var(--cream);color:#342A29;font-family:'DM Sans',sans-serif;min-height:100vh}
 button,input{font:inherit}
 button{cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
 .hidden{display:none!important}
 header{background:var(--wine2);color:white;padding:17px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
 .brand{font:700 32px 'Cormorant Garamond',serif;letter-spacing:3px}
@@ -33,7 +34,6 @@ input:focus{border-color:var(--olive)}
 .btn{border:0;border-radius:12px;padding:13px 17px;background:var(--wine);color:white;font-weight:600}
 .btn.olive{background:var(--olive)}
 .btn.light{background:#f0e9dd;color:var(--wine)}
-.btn:disabled{opacity:.5;cursor:wait}
 .tabs{display:flex;gap:8px;margin:15px 0}
 .tabs button{flex:1}
 .auth{max-width:430px;margin:55px auto}
@@ -64,12 +64,37 @@ input:focus{border-color:var(--olive)}
 .back{background:transparent;border:0;color:white;font-size:22px}
 .empty{text-align:center;padding:25px;color:var(--muted);font-size:14px}
 footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacing:2px}
+.call-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{width:43px;height:43px;border:1px solid #80606b;border-radius:50%;background:#583040;color:#fff;display:grid;place-items:center;padding:10px}
+.icon-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:active{transform:scale(.96)}
+.icon-btn.video{background:var(--olive);border-color:#82906f}
+.call-overlay{position:fixed;inset:0;z-index:30;background:#21151eeb;display:flex;align-items:center;justify-content:center;padding:18px}
+.call-card{width:100%;max-width:470px;background:var(--cream);border-radius:24px;padding:24px;text-align:center;box-shadow:0 20px 70px #0006}
+.call-card h2{margin:12px 0 4px}
+.call-avatar{width:82px;height:82px;border-radius:50%;margin:0 auto;background:var(--olive);color:white;display:grid;place-items:center;font:700 30px 'Cormorant Garamond',serif}
+.call-status{color:var(--muted);font-size:13px;margin:8px 0 18px}
+.call-buttons{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:20px}
+.call-control{width:55px;height:55px;border:0;border-radius:50%;display:grid;place-items:center;background:#e9e0d5;color:var(--wine)}
+.call-control svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.call-control.end{background:#b52e45;color:white}
+.call-control.accept{background:var(--olive);color:white}
+.call-control.active{background:var(--wine);color:white}
+.call-label{font-size:10px;color:var(--muted);margin-top:5px}
+.video-stage{position:relative;background:#211820;border-radius:16px;overflow:hidden;width:100%;aspect-ratio:4/5;max-height:55vh;margin:15px auto}
+.remote-video{width:100%;height:100%;object-fit:cover;background:#211820}
+.local-video{position:absolute;right:10px;bottom:10px;width:28%;max-height:130px;aspect-ratio:3/4;object-fit:cover;border:2px solid var(--gold);border-radius:12px;background:#352630}
+.audio-stage{padding:20px 0}
+.call-controls-wrap{display:flex;justify-content:center;gap:17px;flex-wrap:wrap}
+.call-control-item{min-width:58px}
+.call-note{font-size:11px;color:var(--muted);margin-top:15px}
 @media(min-width:700px){.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
 @media(max-width:430px){
   .wrap{padding:13px}.panel{padding:16px}
   .searchline{gap:5px}.searchline .btn{padding:12px 10px}
-  .chat-input{gap:6px}
-  .chat-input .btn{padding:12px}
+  .chat-input{gap:6px}.chat-input .btn{padding:12px}
+  .icon-btn{width:39px;height:39px;padding:9px}
+  .call-card{padding:20px}
 }
 </style>
 </head>
@@ -88,19 +113,15 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
   <div class="panel auth">
     <h1>Welcome to DAOOS</h1>
     <p class="muted">A private space for your favourite people.</p>
-
     <div class="tabs">
       <button class="btn" id="loginTab" onclick="showAuth('login')">Log In</button>
       <button class="btn light" id="signupTab" onclick="showAuth('signup')">Sign Up</button>
     </div>
-
     <div id="nameField" class="hidden">
       <input id="fullName" placeholder="Your full name" autocomplete="name">
     </div>
-
     <input id="email" type="email" placeholder="Email address" autocomplete="email">
     <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-
     <button class="btn" id="authBtn" style="width:100%" onclick="authenticate()">Log In</button>
     <div id="authMessage" aria-live="polite"></div>
   </div>
@@ -128,19 +149,16 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
         </div>
         <div id="searchResults" class="muted">Find people on DAOOS.</div>
       </div>
-
       <div class="panel">
         <h2>Friend Requests</h2>
         <div id="requestsList" class="muted">Loading requests...</div>
       </div>
     </div>
-
     <div class="panel">
       <h2>My Friends</h2>
       <div id="friendsList" class="muted">Loading friends...</div>
     </div>
   </div>
-
   <footer>DAOOS · PRIVATE BY DESIGN</footer>
 </div>
 
@@ -154,7 +172,15 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
         <div class="header-small">PRIVATE CHAT</div>
       </div>
     </div>
-    <button class="btn light" onclick="backToDashboard()">Back</button>
+
+    <div class="call-actions">
+      <button class="icon-btn" onclick="startCall('audio')" title="Voice call" aria-label="Voice call">
+        <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7.1 10.4a16 16 0 0 0 6 6l1.9-1.9a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 2.2 2.5z"/></svg>
+      </button>
+      <button class="icon-btn video" onclick="startCall('video')" title="Video call" aria-label="Video call">
+        <svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+      </button>
+    </div>
   </header>
 
   <div class="wrap">
@@ -162,33 +188,78 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
       <div id="messages" class="chatbox">
         <div class="empty">Your conversation starts here.</div>
       </div>
-
       <div class="chat-input">
-        <button class="btn light" id="mediaButton"
-          onclick="document.getElementById('mediaInput').click()"
-          title="Send photo or video">＋</button>
-
-        <input
-          id="mediaInput"
-          type="file"
-          accept="image/*,video/*"
-          hidden
-          onchange="uploadMedia(event)"
-        >
-
-        <input
-          id="messageInput"
-          placeholder="Write a message..."
-          onkeydown="if(event.key==='Enter')sendMessage()"
-        >
-
+        <button class="btn light" id="mediaButton" onclick="document.getElementById('mediaInput').click()" title="Send photo or video">＋</button>
+        <input id="mediaInput" type="file" accept="image/*,video/*" hidden onchange="uploadMedia(event)">
+        <input id="messageInput" placeholder="Write a message..." onkeydown="if(event.key==='Enter')sendMessage()">
         <button class="btn" onclick="sendMessage()">Send</button>
       </div>
-
       <div id="mediaStatus" class="muted media-status" aria-live="polite"></div>
-
-      <p class="muted">＋ Send photos and videos · Voice and video calling will be connected in the next phase.</p>
+      <p class="muted">＋ Send photos and videos · Private voice and video calls.</p>
     </div>
+  </div>
+</div>
+
+<!-- INCOMING CALL -->
+<div id="incomingCall" class="call-overlay hidden">
+  <div class="call-card">
+    <div class="call-avatar" id="incomingAvatar">D</div>
+    <h2 id="incomingName">Incoming call</h2>
+    <div class="call-status" id="incomingType">Incoming voice call</div>
+    <div class="call-buttons">
+      <div>
+        <button class="call-control end" onclick="rejectCall()" aria-label="Reject call">
+          <svg viewBox="0 0 24 24"><path d="M4 15.5c4.8-4 11.2-4 16 0l1.5 1.3-2.2 3.1a1.5 1.5 0 0 1-1.8.5l-3-1.2a1.5 1.5 0 0 1-.9-1.4v-1.2a13 13 0 0 0-5.2 0v1.2a1.5 1.5 0 0 1-.9 1.4l-3 1.2a1.5 1.5 0 0 1-1.8-.5L1.5 16.8z"/></svg>
+        </button>
+        <div class="call-label">Decline</div>
+      </div>
+      <div>
+        <button class="call-control accept" onclick="acceptCall()" aria-label="Accept call">
+          <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3a2 2 0 0 1-.6 1.8L7.1 10.4a16 16 0 0 0 6 6l1.9-1.9a2 2 0 0 1 1.8-.6l3 .5a2 2 0 0 1 2.2 2.5z"/></svg>
+        </button>
+        <div class="call-label">Accept</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVE CALL -->
+<div id="activeCall" class="call-overlay hidden">
+  <div class="call-card">
+    <div id="audioStage" class="audio-stage">
+      <div class="call-avatar" id="activeAvatar">D</div>
+      <h2 id="activeName">Friend</h2>
+    </div>
+
+    <div id="videoStage" class="video-stage hidden">
+      <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+      <video id="localVideo" class="local-video" autoplay muted playsinline></video>
+    </div>
+
+    <audio id="remoteAudio" autoplay playsinline></audio>
+    <div class="call-status" id="callStatus">Connecting...</div>
+
+    <div class="call-controls-wrap">
+      <div class="call-control-item">
+        <button class="call-control" id="muteButton" onclick="toggleMute()" aria-label="Mute microphone">
+          <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 19v3m-4 0h8"/></svg>
+        </button>
+        <div class="call-label" id="muteLabel">Mute</div>
+      </div>
+      <div class="call-control-item" id="cameraControl">
+        <button class="call-control" id="cameraButton" onclick="toggleCamera()" aria-label="Turn camera off">
+          <svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+        </button>
+        <div class="call-label" id="cameraLabel">Camera off</div>
+      </div>
+      <div class="call-control-item">
+        <button class="call-control end" onclick="endCall(true)" aria-label="End call">
+          <svg viewBox="0 0 24 24"><path d="M4 15.5c4.8-4 11.2-4 16 0l1.5 1.3-2.2 3.1a1.5 1.5 0 0 1-1.8.5l-3-1.2a1.5 1.5 0 0 1-.9-1.4v-1.2a13 13 0 0 0-5.2 0v1.2a1.5 1.5 0 0 1-.9 1.4l-3 1.2a1.5 1.5 0 0 1-1.8-.5L1.5 16.8z"/></svg>
+        </button>
+        <div class="call-label">End</div>
+      </div>
+    </div>
+    <div class="call-note">DAOOS private call</div>
   </div>
 </div>
 
@@ -196,7 +267,6 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
 /* SUPABASE CONNECTION */
 const SUPABASE_URL = "https://odewqgpqeqzbieqrvywo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lkHssrmtg4J2DrwOBAHO9w_HqNUwsBe";
-
 const MEDIA_BUCKET = "daoos-media";
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
@@ -224,7 +294,26 @@ let authMode = "login";
 let activeConversation = null;
 let activeFriend = null;
 let messageChannel = null;
+let callChannel = null;
 let appLoading = false;
+
+/* WEBRTC CALL STATE */
+const rtcConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" }
+  ]
+};
+
+let peerConnection = null;
+let localStream = null;
+let remoteStream = null;
+let currentCall = null;
+let incomingCallData = null;
+let pendingIceCandidates = [];
+let isMuted = false;
+let isCameraOff = false;
+let callChannelReady = false;
 
 /* HELPERS */
 function el(id) {
@@ -233,52 +322,34 @@ function el(id) {
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 }
 
 function initials(name) {
-  return (name || "D").trim()
-    .split(/\s+/)
-    .slice(0,2)
-    .map(x => x[0])
-    .join("")
-    .toUpperCase();
+  return (name || "D").trim().split(/\s+/).slice(0,2)
+    .map(x => x[0]).join("").toUpperCase();
 }
 
 function avatarHTML(profile = {}) {
   const name = profile.display_name || profile.username || "Friend";
-
   if (profile.avatar_url) {
     return `<div class="avatar"><img src="${escapeHTML(profile.avatar_url)}" alt=""></div>`;
   }
-
   return `<div class="avatar">${escapeHTML(initials(name))}</div>`;
 }
 
 function showMessage(id, message, type = "error") {
-  el(id).innerHTML =
-    `<div class="${type}">${escapeHTML(message)}</div>`;
+  el(id).innerHTML = `<div class="${type}">${escapeHTML(message)}</div>`;
 }
 
 /* LOGIN / SIGNUP */
 function showAuth(mode) {
   authMode = mode;
-
   el("nameField").classList.toggle("hidden", mode !== "signup");
-  el("authBtn").textContent =
-    mode === "signup" ? "Create Account" : "Log In";
-
-  el("loginTab").className =
-    mode === "login" ? "btn" : "btn light";
-
-  el("signupTab").className =
-    mode === "signup" ? "btn" : "btn light";
-
+  el("authBtn").textContent = mode === "signup" ? "Create Account" : "Log In";
+  el("loginTab").className = mode === "login" ? "btn" : "btn light";
+  el("signupTab").className = mode === "signup" ? "btn" : "btn light";
   el("authMessage").innerHTML = "";
 }
 
@@ -292,12 +363,10 @@ async function authenticate() {
     showMessage("authMessage", "Please enter your email and password.");
     return;
   }
-
   if (modeAtStart === "signup" && !fullName) {
     showMessage("authMessage", "Please enter your name.");
     return;
   }
-
   if (password.length < 6) {
     showMessage("authMessage", "Password must be at least 6 characters.");
     return;
@@ -317,31 +386,21 @@ async function authenticate() {
           emailRedirectTo: "https://ivoryvows.github.io/Daoos/"
         }
       });
-
       if (error) throw error;
 
       if (!data.session) {
-        showMessage(
-          "authMessage",
+        showMessage("authMessage",
           "Account created! Please confirm your email, then return here and log in.",
-          "success"
-        );
+          "success");
       } else {
         await loadApp();
       }
-
     } else {
-      const { data, error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
+      const { data, error } = await db.auth.signInWithPassword({email,password});
       if (error) throw error;
       if (!data.session) throw new Error("Login did not create a session.");
-
       await loadApp();
     }
-
   } catch (error) {
     console.error("Authentication error:", error);
     showMessage("authMessage", error.message || "Login failed.");
@@ -360,7 +419,6 @@ async function loadApp() {
   try {
     const { data, error } = await db.auth.getSession();
     if (error) throw error;
-
     const user = data.session?.user;
 
     if (!user) {
@@ -372,38 +430,27 @@ async function loadApp() {
     }
 
     currentUser = user;
+    const profileResult = await db.from("profiles")
+      .select("*").eq("id", user.id).maybeSingle();
 
-    const profileResult = await db
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileResult.error) {
-      console.error("Profile loading warning:", profileResult.error);
-    }
+    if (profileResult.error) console.error(profileResult.error);
 
     myProfile = profileResult.data || {
-      id: user.id,
-      display_name: user.user_metadata?.full_name || user.email
+      id:user.id,
+      display_name:user.user_metadata?.full_name || user.email
     };
 
     el("authView").classList.add("hidden");
     el("chatView").classList.add("hidden");
     el("dashboard").classList.remove("hidden");
     el("logoutBtn").style.display = "block";
+    el("welcomeName").textContent = "Hello, " + (myProfile.display_name || "Friend");
+    el("myAvatar").textContent = initials(myProfile.display_name || user.email);
 
-    el("welcomeName").textContent =
-      "Hello, " + (myProfile.display_name || "Friend");
-
-    el("myAvatar").textContent =
-      initials(myProfile.display_name || user.email);
-
-    await Promise.all([loadFriends(), loadRequests()]);
-
+    await Promise.all([loadFriends(),loadRequests()]);
   } catch (error) {
-    console.error("App loading error:", error);
-    showMessage("authMessage", error.message || "Could not load DAOOS.");
+    console.error("App loading error:",error);
+    showMessage("authMessage",error.message || "Could not load DAOOS.");
     el("authView").classList.remove("hidden");
   } finally {
     appLoading = false;
@@ -413,70 +460,66 @@ async function loadApp() {
 /* LOGOUT */
 async function logout() {
   try {
+    await endCall(false);
+    await removeCallChannel();
+
     if (messageChannel) {
       await db.removeChannel(messageChannel);
       messageChannel = null;
     }
 
-    const { error } = await db.auth.signOut();
+    const {error} = await db.auth.signOut();
     if (error) throw error;
 
-    currentUser = null;
-    myProfile = null;
-    activeConversation = null;
-    activeFriend = null;
+    currentUser=null;
+    myProfile=null;
+    activeConversation=null;
+    activeFriend=null;
 
     el("dashboard").classList.add("hidden");
     el("chatView").classList.add("hidden");
     el("authView").classList.remove("hidden");
-    el("logoutBtn").style.display = "none";
-    el("password").value = "";
-    el("authMessage").innerHTML = "";
-
-  } catch (error) {
-    alert("Logout error: " + error.message);
+    el("logoutBtn").style.display="none";
+    el("password").value="";
+    el("authMessage").innerHTML="";
+  } catch(error) {
+    alert("Logout error: "+error.message);
   }
 }
 
 /* SEARCH PEOPLE */
 async function searchPeople() {
   if (!currentUser) return;
-
-  const term = el("searchInput").value.trim();
-
+  const term=el("searchInput").value.trim();
   if (!term) {
-    el("searchResults").textContent = "Enter a name or username.";
+    el("searchResults").textContent="Enter a name or username.";
     return;
   }
 
-  el("searchResults").textContent = "Searching...";
+  el("searchResults").textContent="Searching...";
+  const safeTerm=term.replace(/[,%()]/g,"");
 
-  const safeTerm = term.replace(/[,%()]/g, "");
-
-  const { data, error } = await db
-    .from("profiles")
+  const {data,error}=await db.from("profiles")
     .select("id,username,display_name,avatar_url")
-    .neq("id", currentUser.id)
+    .neq("id",currentUser.id)
     .or(`display_name.ilike.%${safeTerm}%,username.ilike.%${safeTerm}%`)
     .limit(20);
 
-  if (error) {
-    el("searchResults").textContent = error.message;
+  if(error) {
+    el("searchResults").textContent=error.message;
+    return;
+  }
+  if(!data || !data.length) {
+    el("searchResults").innerHTML='<div class="empty">No users found.</div>';
     return;
   }
 
-  if (!data || !data.length) {
-    el("searchResults").innerHTML =
-      '<div class="empty">No users found.</div>';
-    return;
-  }
-
-  el("searchResults").innerHTML = data.map(p => `
+  el("searchResults").innerHTML=data.map(p=>`
     <div class="person">
       ${avatarHTML(p)}
       <div class="person-info">
-        <strong>${escapeHTML(p.display_name || p.username || "DAOOS user")}</strong>
-        <small>@${escapeHTML(p.username || "member")}</small>
+        <strong>${escapeHTML(p.display_name||p.username||"DAOOS user")}</strong>
+        <small>@${escapeHTML(p.username||"member")}</small>
       </div>
       <button class="btn olive" onclick="sendRequest('${p.id}')">Add</button>
     </div>
@@ -485,141 +528,104 @@ async function searchPeople() {
 
 /* SEND FRIEND REQUEST */
 async function sendRequest(receiverId) {
-  if (!currentUser || receiverId === currentUser.id) return;
-
-  const { error } = await db.from("friend_requests").insert({
-    sender_id: currentUser.id,
-    receiver_id: receiverId,
-    status: "pending"
+  if(!currentUser || receiverId===currentUser.id) return;
+  const {error}=await db.from("friend_requests").insert({
+    sender_id:currentUser.id,receiver_id:receiverId,status:"pending"
   });
-
-  if (error) {
-    alert(error.message.includes("duplicate")
-      ? "Request already sent."
-      : error.message);
+  if(error) {
+    alert(error.message.includes("duplicate")?"Request already sent.":error.message);
     return;
   }
-
   alert("Friend request sent!");
 }
 
 /* LOAD REQUESTS */
 async function loadRequests() {
-  if (!currentUser) return;
+  if(!currentUser) return;
+  const {data,error}=await db.from("friend_requests")
+    .select("*").eq("receiver_id",currentUser.id)
+    .eq("status","pending").order("created_at",{ascending:false});
 
-  const { data, error } = await db
-    .from("friend_requests")
-    .select("*")
-    .eq("receiver_id", currentUser.id)
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    el("requestsList").textContent = error.message;
+  if(error) {
+    el("requestsList").textContent=error.message;
+    return;
+  }
+  if(!data || !data.length) {
+    el("requestsList").innerHTML='<div class="empty">No new requests.</div>';
     return;
   }
 
-  if (!data || !data.length) {
-    el("requestsList").innerHTML =
-      '<div class="empty">No new requests.</div>';
+  const ids=data.map(r=>r.sender_id);
+  const {data:people,error:peopleError}=await db.from("profiles")
+    .select("*").in("id",ids);
+
+  if(peopleError) {
+    el("requestsList").textContent=peopleError.message;
     return;
   }
 
-  const ids = data.map(r => r.sender_id);
-
-  const { data: people, error: peopleError } = await db
-    .from("profiles")
-    .select("*")
-    .in("id", ids);
-
-  if (peopleError) {
-    el("requestsList").textContent = peopleError.message;
-    return;
-  }
-
-  el("requestsList").innerHTML = data.map(r => {
-    const p = people?.find(x => x.id === r.sender_id) || {};
-
+  el("requestsList").innerHTML=data.map(r=>{
+    const p=people?.find(x=>x.id===r.sender_id)||{};
     return `
       <div class="person">
         ${avatarHTML(p)}
         <div class="person-info">
-          <strong>${escapeHTML(p.display_name || p.username || "DAOOS user")}</strong>
+          <strong>${escapeHTML(p.display_name||p.username||"DAOOS user")}</strong>
           <small>Wants to connect</small>
         </div>
         <button class="btn olive" onclick="respondRequest('${r.id}','accepted')">✓</button>
         <button class="btn light" onclick="respondRequest('${r.id}','rejected')">×</button>
-      </div>
-    `;
+      </div>`;
   }).join("");
 }
 
 /* ACCEPT / REJECT REQUEST */
-async function respondRequest(id, status) {
-  const { error } = await db
-    .from("friend_requests")
-    .update({ status })
-    .eq("id", id);
-
-  if (error) {
+async function respondRequest(id,status) {
+  const {error}=await db.from("friend_requests").update({status}).eq("id",id);
+  if(error) {
     alert(error.message);
     return;
   }
-
   await loadRequests();
   await loadFriends();
 }
 
 /* LOAD FRIENDS */
 async function loadFriends() {
-  if (!currentUser) return;
+  if(!currentUser) return;
 
-  const { data: sent, error: sentError } = await db
-    .from("friend_requests")
-    .select("receiver_id")
-    .eq("sender_id", currentUser.id)
-    .eq("status", "accepted");
+  const {data:sent,error:sentError}=await db.from("friend_requests")
+    .select("receiver_id").eq("sender_id",currentUser.id).eq("status","accepted");
+  const {data:received,error:receivedError}=await db.from("friend_requests")
+    .select("sender_id").eq("receiver_id",currentUser.id).eq("status","accepted");
 
-  const { data: received, error: receivedError } = await db
-    .from("friend_requests")
-    .select("sender_id")
-    .eq("receiver_id", currentUser.id)
-    .eq("status", "accepted");
-
-  if (sentError || receivedError) {
-    el("friendsList").textContent =
-      (sentError || receivedError).message;
+  if(sentError||receivedError) {
+    el("friendsList").textContent=(sentError||receivedError).message;
     return;
   }
 
-  const ids = [
-    ...(sent || []).map(x => x.receiver_id),
-    ...(received || []).map(x => x.sender_id)
+  const ids=[
+    ...(sent||[]).map(x=>x.receiver_id),
+    ...(received||[]).map(x=>x.sender_id)
   ];
+  const unique=[...new Set(ids)];
 
-  const unique = [...new Set(ids)];
-
-  if (!unique.length) {
-    el("friendsList").innerHTML =
-      '<div class="empty">Your circle is waiting. Search for friends to get started.</div>';
+  if(!unique.length) {
+    el("friendsList").innerHTML='<div class="empty">Your circle is waiting. Search for friends to get started.</div>';
     return;
   }
 
-  const { data: people, error } = await db
-    .from("profiles")
-    .select("*")
-    .in("id", unique);
-
-  if (error) {
-    el("friendsList").textContent = error.message;
+  const {data:people,error}=await db.from("profiles").select("*").in("id",unique);
+  if(error) {
+    el("friendsList").textContent=error.message;
     return;
   }
 
-  el("friendsList").innerHTML = (people || []).map(p => `
+  el("friendsList").innerHTML=(people||[]).map(p=>`
     <div class="person" style="cursor:pointer" onclick="openChat('${p.id}')">
       ${avatarHTML(p)}
       <div class="person-info">
-        <strong>${escapeHTML(p.display_name || p.username || "Friend")}</strong>
+        <strong>${escapeHTML(p.display_name||p.username||"Friend")}</strong>
         <small>Tap to open chat</small>
       </div>
       <span style="color:var(--gold);font-size:22px">›</span>
@@ -629,112 +635,84 @@ async function loadFriends() {
 
 /* OPEN PRIVATE CHAT */
 async function openChat(friendId) {
-  if (!currentUser) return;
+  if(!currentUser) return;
 
   try {
-    const { data: authData, error: authError } = await db.auth.getUser();
-
-    if (authError || !authData.user) {
+    const {data:authData,error:authError}=await db.auth.getUser();
+    if(authError||!authData.user) {
       throw new Error("Your login session expired. Please log in again.");
     }
+    currentUser=authData.user;
 
-    currentUser = authData.user;
-
-    if (friendId === currentUser.id) {
+    if(friendId===currentUser.id) {
       alert("You cannot open a chat with yourself.");
       return;
     }
 
-    const { data: friend, error: friendError } = await db
-      .from("profiles")
-      .select("*")
-      .eq("id", friendId)
-      .single();
+    await endCall(false);
+    await removeCallChannel();
 
-    if (friendError) throw friendError;
+    if(messageChannel) {
+      await db.removeChannel(messageChannel);
+      messageChannel=null;
+    }
 
-    activeFriend = friend;
+    const {data:friend,error:friendError}=await db.from("profiles")
+      .select("*").eq("id",friendId).single();
+    if(friendError) throw friendError;
 
+    activeFriend=friend;
     el("dashboard").classList.add("hidden");
     el("chatView").classList.remove("hidden");
-    el("chatName").textContent =
-      friend.display_name || friend.username || "Friend";
-    el("chatAvatar").textContent =
-      initials(friend.display_name || friend.username);
+    el("chatName").textContent=friend.display_name||friend.username||"Friend";
+    el("chatAvatar").textContent=initials(friend.display_name||friend.username);
 
-    const { data: myMemberships, error: myError } = await db
-      .from("conversation_members")
-      .select("conversation_id")
-      .eq("user_id", currentUser.id);
+    const {data:myMemberships,error:myError}=await db.from("conversation_members")
+      .select("conversation_id").eq("user_id",currentUser.id);
+    if(myError) throw myError;
 
-    if (myError) throw myError;
+    let found=null;
 
-    let found = null;
+    for(const m of (myMemberships||[])) {
+      const {data:members,error:membersError}=await db.from("conversation_members")
+        .select("user_id").eq("conversation_id",m.conversation_id);
+      if(membersError) throw membersError;
 
-    for (const m of (myMemberships || [])) {
-      const { data: members, error: membersError } = await db
-        .from("conversation_members")
-        .select("user_id")
-        .eq("conversation_id", m.conversation_id);
-
-      if (membersError) throw membersError;
-
-      const memberIds = (members || []).map(x => x.user_id);
-
-      if (
-        memberIds.includes(friendId) &&
-        memberIds.includes(currentUser.id) &&
-        memberIds.length === 2
-      ) {
-        const { data: conversation, error: conversationError } = await db
-          .from("conversations")
-          .select("*")
-          .eq("id", m.conversation_id)
-          .eq("is_group", false)
-          .maybeSingle();
-
-        if (conversationError) throw conversationError;
-
-        if (conversation) {
-          found = conversation;
+      const memberIds=(members||[]).map(x=>x.user_id);
+      if(memberIds.includes(friendId)&&memberIds.includes(currentUser.id)&&memberIds.length===2) {
+        const {data:conversation,error:conversationError}=await db.from("conversations")
+          .select("*").eq("id",m.conversation_id).eq("is_group",false).maybeSingle();
+        if(conversationError) throw conversationError;
+        if(conversation) {
+          found=conversation;
           break;
         }
       }
     }
 
-    if (!found) {
-      const { data: conversationId, error: createError } = await db.rpc(
-        "daoos_create_private_conversation",
-        { friend_uuid: friendId }
+    if(!found) {
+      const {data:conversationId,error:createError}=await db.rpc(
+        "daoos_create_private_conversation",{friend_uuid:friendId}
       );
-
-      if (createError) {
-        throw new Error(
-          "Conversation creation failed: " +
-          createError.message +
-          " | Code: " +
-          (createError.code || "unknown")
-        );
+      if(createError) {
+        throw new Error("Conversation creation failed: "+createError.message+
+          " | Code: "+(createError.code||"unknown"));
       }
-
-      if (!conversationId) {
-        throw new Error("The database did not return a conversation ID.");
-      }
-
-      found = { id: conversationId, is_group: false };
+      if(!conversationId) throw new Error("The database did not return a conversation ID.");
+      found={id:conversationId,is_group:false};
     }
 
-    activeConversation = found.id;
-
-    el("mediaStatus").textContent = "";
+    activeConversation=found.id;
+    el("mediaStatus").textContent="";
     await loadMessages();
     subscribeMessages();
+    subscribeCallSignals();
 
-  } catch (error) {
-    console.error("Open chat error:", error);
-    alert(error.message || "Could not open chat.");
-
-    activeConversation = null;
+  } catch(error) {
+    console.error("Open chat error:",error);
+    alert(error.message||"Could not open chat.");
+    activeConversation=null;
+    activeFriend=null;
     el("chatView").classList.add("hidden");
     el("dashboard").classList.remove("hidden");
   }
@@ -742,284 +720,665 @@ async function openChat(friendId) {
 
 /* LOAD MESSAGES */
 async function loadMessages() {
-  if (!activeConversation) return;
+  if(!activeConversation) return;
+  const conversationAtStart=activeConversation;
 
-  const conversationAtStart = activeConversation;
+  const {data,error}=await db.from("messages").select("*")
+    .eq("conversation_id",conversationAtStart)
+    .order("created_at",{ascending:true});
 
-  const { data, error } = await db
-    .from("messages")
-    .select("*")
-    .eq("conversation_id", conversationAtStart)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    el("messages").innerHTML =
-      `<div class="error">${escapeHTML(error.message)}</div>`;
+  if(error) {
+    el("messages").innerHTML=`<div class="error">${escapeHTML(error.message)}</div>`;
     return;
   }
-
-  if (conversationAtStart !== activeConversation) return;
-
-  await renderMessages(data || []);
+  if(conversationAtStart!==activeConversation) return;
+  await renderMessages(data||[]);
 }
 
 /* DISPLAY TEXT, PHOTOS AND VIDEOS */
 async function renderMessages(items) {
-  if (!items.length) {
-    el("messages").innerHTML =
-      '<div class="empty">Say hello and start your conversation.</div>';
+  if(!items.length) {
+    el("messages").innerHTML='<div class="empty">Say hello and start your conversation.</div>';
     return;
   }
 
-  const conversationAtStart = activeConversation;
+  const conversationAtStart=activeConversation;
+  const rendered=await Promise.all(items.map(async m=>{
+    const mine=m.sender_id===currentUser.id;
+    let content="";
 
-  const rendered = await Promise.all(items.map(async m => {
-    const mine = m.sender_id === currentUser.id;
-    let content = "";
+    if(m.media_path) {
+      const {data:signedData,error:signedError}=await db.storage
+        .from(MEDIA_BUCKET).createSignedUrl(m.media_path,3600);
 
-    if (m.media_path) {
-      const { data: signedData, error: signedError } = await db.storage
-        .from(MEDIA_BUCKET)
-        .createSignedUrl(m.media_path, 3600);
-
-      if (signedError || !signedData?.signedUrl) {
-        content = `<div class="media-name">Attachment unavailable: ${escapeHTML(m.media_name || "File")}</div>`;
+      if(signedError||!signedData?.signedUrl) {
+        content=`<div class="media-name">Attachment unavailable: ${escapeHTML(m.media_name||"File")}</div>`;
       } else {
-        const url = escapeHTML(signedData.signedUrl);
-        const mediaName = escapeHTML(m.media_name || "Attachment");
+        const url=escapeHTML(signedData.signedUrl);
+        const mediaName=escapeHTML(m.media_name||"Attachment");
 
-        if ((m.media_type || "").startsWith("image/")) {
-          content = `
-            <img class="chat-media"
-              src="${url}"
-              alt="${mediaName}"
-              loading="lazy">
-            <span class="media-name">${mediaName}</span>
-          `;
-        } else if ((m.media_type || "").startsWith("video/")) {
-          content = `
-            <video class="chat-video"
-              controls
-              playsinline
-              preload="metadata">
-              <source src="${url}" type="${escapeHTML(m.media_type)}">
-              Your browser does not support video playback.
-            </video>
-            <span class="media-name">${mediaName}</span>
-          `;
+        if((m.media_type||"").startsWith("image/")) {
+          content=`<img class="chat-media" src="${url}" alt="${mediaName}" loading="lazy">
+            <span class="media-name">${mediaName}</span>`;
+        } else if((m.media_type||"").startsWith("video/")) {
+          content=`<video class="chat-video" controls playsinline preload="metadata">
+            <source src="${url}" type="${escapeHTML(m.media_type)}">
+            Your browser does not support video playback.</video>
+            <span class="media-name">${mediaName}</span>`;
         } else {
-          content = `<a href="${url}" target="_blank" rel="noopener">Open attachment</a>`;
+          content=`<a href="${url}" target="_blank" rel="noopener">Open attachment</a>`;
         }
       }
     } else {
-      content = escapeHTML(m.body || "");
+      content=escapeHTML(m.body||"");
     }
 
-    return `
-      <div class="bubble ${mine ? "mine" : ""}">
-        ${content}
-        <small>${new Date(m.created_at).toLocaleString()}</small>
-      </div>
-    `;
+    return `<div class="bubble ${mine?"mine":""}">${content}
+      <small>${new Date(m.created_at).toLocaleString()}</small></div>`;
   }));
 
-  if (conversationAtStart !== activeConversation) return;
-
-  el("messages").innerHTML = rendered.join("");
-  el("messages").scrollTop = el("messages").scrollHeight;
+  if(conversationAtStart!==activeConversation) return;
+  el("messages").innerHTML=rendered.join("");
+  el("messages").scrollTop=el("messages").scrollHeight;
 }
 
 /* SEND TEXT MESSAGE */
 async function sendMessage() {
-  const body = el("messageInput").value.trim();
+  const body=el("messageInput").value.trim();
+  if(!body||!activeConversation||!currentUser) return;
 
-  if (!body || !activeConversation || !currentUser) return;
+  const conversationAtStart=activeConversation;
+  el("messageInput").value="";
 
-  const conversationAtStart = activeConversation;
-  el("messageInput").value = "";
-
-  const { data, error: authError } = await db.auth.getUser();
-
-  if (authError || !data.user) {
+  const {data,error:authError}=await db.auth.getUser();
+  if(authError||!data.user) {
     alert("Please log in again.");
-    el("messageInput").value = body;
+    el("messageInput").value=body;
     return;
   }
 
-  const { error } = await db.from("messages").insert({
-    conversation_id: conversationAtStart,
-    sender_id: data.user.id,
-    body: body
+  const {error}=await db.from("messages").insert({
+    conversation_id:conversationAtStart,
+    sender_id:data.user.id,
+    body
   });
 
-  if (error) {
+  if(error) {
     alert(error.message);
-    el("messageInput").value = body;
+    el("messageInput").value=body;
   }
 }
 
 /* UPLOAD PHOTO OR VIDEO */
 async function uploadMedia(event) {
-  const file = event.target.files?.[0];
+  const file=event.target.files?.[0];
+  if(!file) return;
 
-  if (!file) return;
+  const input=event.target;
+  const button=el("mediaButton");
+  const status=el("mediaStatus");
 
-  const input = event.target;
-  const button = el("mediaButton");
-  const status = el("mediaStatus");
-
-  if (!currentUser || !activeConversation) {
+  if(!currentUser||!activeConversation) {
     alert("Please open a chat first.");
-    input.value = "";
+    input.value="";
     return;
   }
-
-  if (
-    !file.type.startsWith("image/") &&
-    !file.type.startsWith("video/")
-  ) {
+  if(!file.type.startsWith("image/")&&!file.type.startsWith("video/")) {
     alert("Please select an image or video file.");
-    input.value = "";
+    input.value="";
     return;
   }
-
-  if (file.size > MAX_FILE_SIZE) {
+  if(file.size>MAX_FILE_SIZE) {
     alert("File is too large. Maximum size is 25 MB.");
-    input.value = "";
+    input.value="";
     return;
   }
 
-  const conversationAtStart = activeConversation;
-  button.disabled = true;
-  status.textContent = "Uploading your file...";
-
-  let uploadedPath = null;
+  const conversationAtStart=activeConversation;
+  button.disabled=true;
+  status.textContent="Uploading your file...";
+  let uploadedPath=null;
 
   try {
-    const safeName = file.name
-      .replace(/[^a-zA-Z0-9._-]/g, "_")
-      .slice(-100);
+    const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+    const uniqueName=(crypto.randomUUID?crypto.randomUUID():
+      Date.now()+"-"+Math.random().toString(36).slice(2))+"-"+safeName;
+    const path=conversationAtStart+"/"+currentUser.id+"/"+uniqueName;
 
-    const uniqueName =
-      (crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now() + "-" + Math.random().toString(36).slice(2))
-      + "-" + safeName;
+    const {data:uploadData,error:uploadError}=await db.storage.from(MEDIA_BUCKET)
+      .upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+    if(uploadError) throw uploadError;
 
-    const path =
-      conversationAtStart + "/" +
-      currentUser.id + "/" +
-      uniqueName;
+    uploadedPath=uploadData.path;
+    const {error:messageError}=await db.from("messages").insert({
+      conversation_id:conversationAtStart,
+      sender_id:currentUser.id,
+      body:file.name,
+      media_path:uploadedPath,
+      media_type:file.type,
+      media_name:file.name
+    });
 
-    const { data: uploadData, error: uploadError } = await db.storage
-      .from(MEDIA_BUCKET)
-      .upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: file.type
-      });
-
-    if (uploadError) throw uploadError;
-
-    uploadedPath = uploadData.path;
-
-    const { error: messageError } = await db
-      .from("messages")
-      .insert({
-        conversation_id: conversationAtStart,
-        sender_id: currentUser.id,
-        body: file.name,
-        media_path: uploadedPath,
-        media_type: file.type,
-        media_name: file.name
-      });
-
-    if (messageError) {
+    if(messageError) {
       await db.storage.from(MEDIA_BUCKET).remove([uploadedPath]);
-      uploadedPath = null;
+      uploadedPath=null;
       throw messageError;
     }
 
-    status.textContent = "File sent successfully!";
-    input.value = "";
+    status.textContent="File sent successfully!";
+    input.value="";
+    if(activeConversation===conversationAtStart) await loadMessages();
 
-    if (activeConversation === conversationAtStart) {
-      await loadMessages();
-    }
-
-  } catch (error) {
-    console.error("Media upload error:", error);
-    status.textContent = "";
-    alert("Upload failed: " + (error.message || "Please try again."));
+  } catch(error) {
+    console.error("Media upload error:",error);
+    status.textContent="";
+    alert("Upload failed: "+(error.message||"Please try again."));
   } finally {
-    button.disabled = false;
+    button.disabled=false;
   }
 }
 
 /* REALTIME MESSAGES */
 function subscribeMessages() {
-  if (messageChannel) {
+  if(messageChannel) {
     db.removeChannel(messageChannel);
-    messageChannel = null;
+    messageChannel=null;
   }
 
-  const conversationAtStart = activeConversation;
+  const conversationAtStart=activeConversation;
+  messageChannel=db.channel("daoos-chat-"+conversationAtStart)
+    .on("postgres_changes",{
+      event:"INSERT",schema:"public",table:"messages",
+      filter:"conversation_id=eq."+conversationAtStart
+    },()=>{
+      if(activeConversation===conversationAtStart) loadMessages();
+    }).subscribe();
+}
 
-  messageChannel = db
-    .channel("daoos-chat-" + conversationAtStart)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: "conversation_id=eq." + conversationAtStart
-      },
-      () => {
-        if (activeConversation === conversationAtStart) {
-          loadMessages();
-        }
+/* CALL SIGNAL CHANNEL */
+async function removeCallChannel() {
+  if(callChannel) {
+    const old=callChannel;
+    callChannel=null;
+    callChannelReady=false;
+    await db.removeChannel(old);
+  }
+}
+
+function subscribeCallSignals() {
+  if(!activeConversation||!currentUser) return;
+
+  if(callChannel) db.removeChannel(callChannel);
+  callChannelReady=false;
+
+  const conversationAtStart=activeConversation;
+  callChannel=db.channel("daoos-calls-"+conversationAtStart)
+    .on("postgres_changes",{
+      event:"INSERT",
+      schema:"public",
+      table:"call_signals",
+      filter:"conversation_id=eq."+conversationAtStart
+    },payload=>{
+      if(activeConversation===conversationAtStart) {
+        handleCallSignal(payload.new);
       }
-    )
-    .subscribe();
+    })
+    .subscribe(status=>{
+      if(status==="SUBSCRIBED") {
+        callChannelReady=true;
+      } else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT") {
+        callChannelReady=false;
+        console.error("Call channel status:",status);
+      }
+    });
+}
+
+async function waitForCallChannel() {
+  for(let i=0;i<50;i++) {
+    if(callChannelReady&&callChannel) return true;
+    await new Promise(resolve=>setTimeout(resolve,200));
+  }
+  throw new Error("Call connection channel is not ready. Please reopen the chat and try again.");
+}
+
+async function sendCallSignal(receiverId,signal) {
+  if(!activeConversation||!currentUser) {
+    throw new Error("Open a private chat before calling.");
+  }
+
+  const {error}=await db.from("call_signals").insert({
+    conversation_id:activeConversation,
+    sender_id:currentUser.id,
+    receiver_id:receiverId,
+    signal
+  });
+
+  if(error) {
+    console.error("Call signal error:",error);
+    throw error;
+  }
+}
+
+/* START VOICE OR VIDEO CALL */
+async function startCall(callType) {
+  if(!currentUser||!activeFriend||!activeConversation) {
+    alert("Open a friend's chat first.");
+    return;
+  }
+  if(currentCall||incomingCallData) {
+    alert("A call is already active.");
+    return;
+  }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) {
+    alert("Your browser does not support microphone or camera access. Open DAOOS in Safari using HTTPS.");
+    return;
+  }
+
+  try {
+    await waitForCallChannel();
+
+    const callId=crypto.randomUUID();
+    currentCall={
+      id:callId,
+      type:callType,
+      peerId:activeFriend.id,
+      initiator:true
+    };
+
+    showActiveCall(callType,"Calling...");
+    localStream=await navigator.mediaDevices.getUserMedia({
+      audio:true,
+      video:callType==="video"
+        ? {facingMode:"user"}
+        : false
+    });
+
+    setupLocalPreview();
+    createPeerConnection();
+
+    localStream.getTracks().forEach(track=>{
+      peerConnection.addTrack(track,localStream);
+    });
+
+    const offer=await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    await sendCallSignal(activeFriend.id,{
+      type:"offer",
+      callId,
+      callType,
+      sdp:peerConnection.localDescription
+    });
+
+    el("callStatus").textContent="Calling "+(activeFriend.display_name||"your friend")+"...";
+  } catch(error) {
+    console.error("Start call error:",error);
+    alert("Could not start call: "+(error.message||error));
+    await endCall(false);
+  }
+}
+
+/* CREATE PEER CONNECTION */
+function createPeerConnection() {
+  if(peerConnection) {
+    try { peerConnection.close(); } catch(e) {}
+  }
+
+  peerConnection=new RTCPeerConnection(rtcConfig);
+  remoteStream=new MediaStream();
+  pendingIceCandidates=[];
+
+  peerConnection.ontrack=event=>{
+    event.streams[0]?.getTracks().forEach(track=>{
+      if(!remoteStream.getTracks().some(t=>t.id===track.id)) {
+        remoteStream.addTrack(track);
+      }
+    });
+    attachRemoteMedia();
+  };
+
+  peerConnection.onicecandidate=async event=>{
+    if(!event.candidate||!currentCall) return;
+    try {
+      await sendCallSignal(currentCall.peerId,{
+        type:"ice",
+        callId:currentCall.id,
+        candidate:event.candidate
+      });
+    } catch(error) {
+      console.error("ICE send error:",error);
+    }
+  };
+
+  peerConnection.onconnectionstatechange=()=>{
+    if(!peerConnection||!currentCall) return;
+    const state=peerConnection.connectionState;
+
+    if(state==="connected") {
+      el("callStatus").textContent="Connected";
+    } else if(state==="connecting") {
+      el("callStatus").textContent="Connecting...";
+    } else if(state==="disconnected") {
+      el("callStatus").textContent="Connection interrupted. Trying to reconnect...";
+    } else if(state==="failed") {
+      el("callStatus").textContent="Connection failed. Your network may need a TURN relay.";
+    }
+  };
+}
+
+/* SHOW CALL UI */
+function showActiveCall(type,status) {
+  el("incomingCall").classList.add("hidden");
+  el("activeCall").classList.remove("hidden");
+  el("activeName").textContent=activeFriend?.display_name||activeFriend?.username||"Friend";
+  el("activeAvatar").textContent=initials(activeFriend?.display_name||activeFriend?.username);
+  el("callStatus").textContent=status;
+
+  const video=type==="video";
+  el("videoStage").classList.toggle("hidden",!video);
+  el("audioStage").classList.toggle("hidden",video);
+  el("cameraControl").classList.toggle("hidden",!video);
+
+  el("remoteVideo").srcObject=null;
+  el("localVideo").srcObject=null;
+  el("remoteAudio").srcObject=null;
+
+  isMuted=false;
+  isCameraOff=false;
+  updateCallButtons();
+}
+
+/* LOCAL AND REMOTE MEDIA */
+function setupLocalPreview() {
+  if(!localStream) return;
+  if(currentCall?.type==="video") {
+    el("localVideo").srcObject=localStream;
+    el("localVideo").play().catch(()=>{});
+  }
+}
+
+function attachRemoteMedia() {
+  if(!remoteStream||!currentCall) return;
+
+  if(currentCall.type==="video") {
+    el("remoteVideo").srcObject=remoteStream;
+    el("remoteVideo").play().catch(()=>{});
+  } else {
+    el("remoteAudio").srcObject=remoteStream;
+    el("remoteAudio").play().catch(()=>{});
+  }
+}
+
+/* HANDLE INCOMING SIGNALS */
+async function handleCallSignal(row) {
+  if(!row||!currentUser||row.receiver_id!==currentUser.id) return;
+
+  const signal=row.signal||{};
+  if(!signal.type||!signal.callId) return;
+
+  try {
+    if(signal.type==="offer") {
+      if(currentCall||incomingCallData) {
+        await sendCallSignal(row.sender_id,{
+          type:"busy",callId:signal.callId
+        });
+        return;
+      }
+
+      if(!activeFriend||activeFriend.id!==row.sender_id) return;
+
+      incomingCallData={
+        id:signal.callId,
+        type:signal.callType==="video"?"video":"audio",
+        peerId:row.sender_id,
+        sdp:signal.sdp
+      };
+
+      el("incomingAvatar").textContent=initials(activeFriend.display_name||activeFriend.username);
+      el("incomingName").textContent=activeFriend.display_name||activeFriend.username||"DAOOS friend";
+      el("incomingType").textContent=
+        incomingCallData.type==="video"?"Incoming video call":"Incoming voice call";
+      el("incomingCall").classList.remove("hidden");
+      return;
+    }
+
+    if(!currentCall||signal.callId!==currentCall.id) return;
+
+    if(signal.type==="answer"&&peerConnection) {
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+      await flushPendingIce();
+      el("callStatus").textContent="Connecting...";
+    }
+
+    if(signal.type==="ice"&&peerConnection&&signal.candidate) {
+      const candidate=new RTCIceCandidate(signal.candidate);
+      if(peerConnection.remoteDescription) {
+        await peerConnection.addIceCandidate(candidate);
+      } else {
+        pendingIceCandidates.push(candidate);
+      }
+    }
+
+    if(signal.type==="reject") {
+      el("callStatus").textContent="Call declined";
+      setTimeout(()=>endCall(false),1000);
+    }
+
+    if(signal.type==="busy") {
+      el("callStatus").textContent="Your friend is busy";
+      setTimeout(()=>endCall(false),1400);
+    }
+
+    if(signal.type==="hangup") {
+      el("callStatus").textContent="Call ended";
+      setTimeout(()=>endCall(false),700);
+    }
+
+  } catch(error) {
+    console.error("Call signal handling error:",error);
+    el("callStatus").textContent="Call connection error";
+  }
+}
+
+/* ACCEPT INCOMING CALL */
+async function acceptCall() {
+  if(!incomingCallData||!activeFriend) return;
+
+  const invitation=incomingCallData;
+  incomingCallData=null;
+
+  try {
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) {
+      throw new Error("Microphone or camera access is unavailable in this browser.");
+    }
+
+    currentCall={
+      id:invitation.id,
+      type:invitation.type,
+      peerId:invitation.peerId,
+      initiator:false
+    };
+
+    el("incomingCall").classList.add("hidden");
+    showActiveCall(currentCall.type,"Connecting...");
+
+    localStream=await navigator.mediaDevices.getUserMedia({
+      audio:true,
+      video:currentCall.type==="video"
+        ? {facingMode:"user"}
+        : false
+    });
+
+    setupLocalPreview();
+    createPeerConnection();
+
+    localStream.getTracks().forEach(track=>{
+      peerConnection.addTrack(track,localStream);
+    });
+
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(invitation.sdp)
+    );
+
+    await flushPendingIce();
+
+    const answer=await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    await sendCallSignal(invitation.peerId,{
+      type:"answer",
+      callId:invitation.id,
+      sdp:peerConnection.localDescription
+    });
+
+    el("callStatus").textContent="Connecting...";
+  } catch(error) {
+    console.error("Accept call error:",error);
+    alert("Could not accept call: "+(error.message||error));
+    await endCall(false);
+  }
+}
+
+/* REJECT INCOMING CALL */
+async function rejectCall() {
+  if(!incomingCallData) return;
+  const invitation=incomingCallData;
+  incomingCallData=null;
+  el("incomingCall").classList.add("hidden");
+
+  try {
+    await sendCallSignal(invitation.peerId,{
+      type:"reject",
+      callId:invitation.id
+    });
+  } catch(error) {
+    console.error("Reject call error:",error);
+  }
+}
+
+/* APPLY QUEUED ICE CANDIDATES */
+async function flushPendingIce() {
+  if(!peerConnection||!peerConnection.remoteDescription) return;
+  const candidates=pendingIceCandidates.splice(0);
+  for(const candidate of candidates) {
+    try {
+      await peerConnection.addIceCandidate(candidate);
+    } catch(error) {
+      console.error("ICE candidate error:",error);
+    }
+  }
+}
+
+/* MUTE / UNMUTE */
+function toggleMute() {
+  if(!localStream) return;
+  isMuted=!isMuted;
+  localStream.getAudioTracks().forEach(track=>{
+    track.enabled=!isMuted;
+  });
+  updateCallButtons();
+}
+
+/* CAMERA ON / OFF */
+function toggleCamera() {
+  if(!localStream) return;
+  isCameraOff=!isCameraOff;
+  localStream.getVideoTracks().forEach(track=>{
+    track.enabled=!isCameraOff;
+  });
+  updateCallButtons();
+}
+
+function updateCallButtons() {
+  el("muteButton").classList.toggle("active",isMuted);
+  el("muteLabel").textContent=isMuted?"Unmute":"Mute";
+  el("cameraButton").classList.toggle("active",isCameraOff);
+  el("cameraLabel").textContent=isCameraOff?"Camera on":"Camera off";
+}
+
+/* END CALL */
+async function endCall(notifyPeer=true) {
+  const call=currentCall;
+  currentCall=null;
+  incomingCallData=null;
+  pendingIceCandidates=[];
+  isMuted=false;
+  isCameraOff=false;
+
+  el("incomingCall").classList.add("hidden");
+  el("activeCall").classList.add("hidden");
+
+  if(notifyPeer&&call&&currentUser&&activeConversation) {
+    try {
+      await sendCallSignal(call.peerId,{
+        type:"hangup",
+        callId:call.id
+      });
+    } catch(error) {
+      console.error("Could not send hangup signal:",error);
+    }
+  }
+
+  if(peerConnection) {
+    try {
+      peerConnection.ontrack=null;
+      peerConnection.onicecandidate=null;
+      peerConnection.close();
+    } catch(error) {}
+    peerConnection=null;
+  }
+
+  if(localStream) {
+    localStream.getTracks().forEach(track=>track.stop());
+    localStream=null;
+  }
+
+  if(remoteStream) {
+    remoteStream.getTracks().forEach(track=>track.stop());
+    remoteStream=null;
+  }
+
+  el("localVideo").srcObject=null;
+  el("remoteVideo").srcObject=null;
+  el("remoteAudio").srcObject=null;
+  return true;
 }
 
 /* BACK TO FRIEND LIST */
 async function backToDashboard() {
-  if (messageChannel) {
+  if(currentCall) await endCall(true);
+  if(incomingCallData) await rejectCall();
+
+  await removeCallChannel();
+
+  if(messageChannel) {
     await db.removeChannel(messageChannel);
-    messageChannel = null;
+    messageChannel=null;
   }
 
-  activeConversation = null;
-  activeFriend = null;
-
+  activeConversation=null;
+  activeFriend=null;
   el("chatView").classList.add("hidden");
   el("dashboard").classList.remove("hidden");
-
   await loadFriends();
 }
 
 /* RESTORE LOGIN SESSION */
 (async function initializeDAOOS() {
   try {
-    const { data, error } = await db.auth.getSession();
+    const {data,error}=await db.auth.getSession();
+    if(error) throw error;
 
-    if (error) throw error;
-
-    if (data.session) {
+    if(data.session) {
       await loadApp();
     } else {
       el("authView").classList.remove("hidden");
       el("dashboard").classList.add("hidden");
       el("chatView").classList.add("hidden");
     }
-  } catch (error) {
-    console.error("DAOOS initialization error:", error);
-    showMessage(
-      "authMessage",
-      error.message || "Could not connect. Please refresh and try again."
-    );
+  } catch(error) {
+    console.error("DAOOS initialization error:",error);
+    showMessage("authMessage",error.message||"Could not connect. Please refresh and try again.");
   }
 })();
 </script>
