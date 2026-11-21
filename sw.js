@@ -5,25 +5,23 @@ self.addEventListener("push", event => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: "DAOOS", body: "You have a new notification." };
+    data = {};
   }
 
-  const title = data.title || "DAOOS";
-  const options = {
-    body: data.body || "You have a new notification.",
-    icon: "/Daoos/icon-192.png",
-    badge: "/Daoos/icon-192.png",
-    data: {
-      url: data.url || "/Daoos/",
-      type: data.type || "message",
-      conversation_id: data.conversation_id || null
-    },
-    tag: data.tag || "daoos-notification",
-    renotify: true
-  };
-
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(data.title || "DAOOS", {
+      body: data.body || "You have a new notification.",
+      icon: "/Daoos/icon-192.png",
+      badge: "/Daoos/icon-192.png",
+      tag: data.tag || "daoos-notification",
+      renotify: true,
+      data: {
+        url: data.url || "/Daoos/",
+        type: data.type || "message",
+        call_id: data.call_id || null,
+        conversation_id: data.conversation_id || null
+      }
+    })
   );
 });
 
@@ -39,10 +37,11 @@ self.addEventListener("notificationclick", event => {
     clients.matchAll({
       type: "window",
       includeUncontrolled: true
-    }).then(windowClients => {
-      for (const client of windowClients) {
+    }).then(async windows => {
+      for (const client of windows) {
         if (client.url.startsWith(self.location.origin + "/Daoos/")) {
-          return client.focus().then(() => client.navigate(target));
+          await client.focus();
+          return client.navigate(target);
         }
       }
       return clients.openWindow(target);
