@@ -57,11 +57,20 @@ input:focus{border-color:var(--olive)}
 .bubble small{display:block;font-size:10px;opacity:.65;margin-top:5px}
 .chat-input{display:flex;gap:8px;align-items:center}
 .chat-input input{margin:0;flex:1;min-width:0}
+.chat-media{display:block;max-width:100%;max-height:360px;border-radius:12px;margin-top:5px}
+.chat-video{display:block;width:100%;max-height:360px;border-radius:12px;margin-top:5px;background:#211820}
+.media-name{font-size:11px;opacity:.75;display:block;margin-top:5px;overflow-wrap:anywhere}
+.media-status{min-height:20px;margin-top:8px}
 .back{background:transparent;border:0;color:white;font-size:22px}
 .empty{text-align:center;padding:25px;color:var(--muted);font-size:14px}
 footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacing:2px}
 @media(min-width:700px){.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
-@media(max-width:430px){.wrap{padding:13px}.panel{padding:16px}.searchline{gap:5px}.searchline .btn{padding:12px 10px}}
+@media(max-width:430px){
+  .wrap{padding:13px}.panel{padding:16px}
+  .searchline{gap:5px}.searchline .btn{padding:12px 10px}
+  .chat-input{gap:6px}
+  .chat-input .btn{padding:12px}
+}
 </style>
 </head>
 
@@ -155,11 +164,30 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
       </div>
 
       <div class="chat-input">
-        <input id="messageInput" placeholder="Write a message..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn light" id="mediaButton"
+          onclick="document.getElementById('mediaInput').click()"
+          title="Send photo or video">＋</button>
+
+        <input
+          id="mediaInput"
+          type="file"
+          accept="image/*,video/*"
+          hidden
+          onchange="uploadMedia(event)"
+        >
+
+        <input
+          id="messageInput"
+          placeholder="Write a message..."
+          onkeydown="if(event.key==='Enter')sendMessage()"
+        >
+
         <button class="btn" onclick="sendMessage()">Send</button>
       </div>
 
-      <p class="muted">Voice and video calling will be connected in the next phase.</p>
+      <div id="mediaStatus" class="muted media-status" aria-live="polite"></div>
+
+      <p class="muted">＋ Send photos and videos · Voice and video calling will be connected in the next phase.</p>
     </div>
   </div>
 </div>
@@ -168,6 +196,9 @@ footer{text-align:center;padding:25px;color:#9a8b7d;font-size:11px;letter-spacin
 /* SUPABASE CONNECTION */
 const SUPABASE_URL = "https://odewqgpqeqzbieqrvywo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lkHssrmtg4J2DrwOBAHO9w_HqNUwsBe";
+
+const MEDIA_BUCKET = "daoos-media";
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 if (!window.supabase) {
   document.getElementById("authMessage").textContent =
@@ -234,6 +265,7 @@ function showMessage(id, message, type = "error") {
     `<div class="${type}">${escapeHTML(message)}</div>`;
 }
 
+/* LOGIN / SIGNUP */
 function showAuth(mode) {
   authMode = mode;
 
@@ -250,7 +282,6 @@ function showAuth(mode) {
   el("authMessage").innerHTML = "";
 }
 
-/* LOGIN AND SIGNUP */
 async function authenticate() {
   const email = el("email").value.trim();
   const password = el("password").value;
@@ -306,17 +337,14 @@ async function authenticate() {
       });
 
       if (error) throw error;
-
-      if (!data.session) {
-        throw new Error("Login did not create a session. Please try again.");
-      }
+      if (!data.session) throw new Error("Login did not create a session.");
 
       await loadApp();
     }
 
   } catch (error) {
     console.error("Authentication error:", error);
-    showMessage("authMessage", error.message || "Login failed. Please try again.");
+    showMessage("authMessage", error.message || "Login failed.");
   } finally {
     el("authBtn").disabled = false;
     el("authBtn").textContent =
@@ -324,14 +352,13 @@ async function authenticate() {
   }
 }
 
-/* LOAD APP AFTER LOGIN */
+/* LOAD APP */
 async function loadApp() {
   if (appLoading) return;
   appLoading = true;
 
   try {
     const { data, error } = await db.auth.getSession();
-
     if (error) throw error;
 
     const user = data.session?.user;
@@ -346,8 +373,6 @@ async function loadApp() {
 
     currentUser = user;
 
-    let profile = null;
-
     const profileResult = await db
       .from("profiles")
       .select("*")
@@ -356,11 +381,9 @@ async function loadApp() {
 
     if (profileResult.error) {
       console.error("Profile loading warning:", profileResult.error);
-    } else {
-      profile = profileResult.data;
     }
 
-    myProfile = profile || {
+    myProfile = profileResult.data || {
       id: user.id,
       display_name: user.user_metadata?.full_name || user.email
     };
@@ -376,10 +399,7 @@ async function loadApp() {
     el("myAvatar").textContent =
       initials(myProfile.display_name || user.email);
 
-    await Promise.all([
-      loadFriends(),
-      loadRequests()
-    ]);
+    await Promise.all([loadFriends(), loadRequests()]);
 
   } catch (error) {
     console.error("App loading error:", error);
@@ -410,7 +430,6 @@ async function logout() {
     el("chatView").classList.add("hidden");
     el("authView").classList.remove("hidden");
     el("logoutBtn").style.display = "none";
-
     el("password").value = "";
     el("authMessage").innerHTML = "";
 
@@ -484,7 +503,7 @@ async function sendRequest(receiverId) {
   alert("Friend request sent!");
 }
 
-/* LOAD FRIEND REQUESTS */
+/* LOAD REQUESTS */
 async function loadRequests() {
   if (!currentUser) return;
 
@@ -535,7 +554,7 @@ async function loadRequests() {
   }).join("");
 }
 
-/* ACCEPT OR REJECT REQUEST */
+/* ACCEPT / REJECT REQUEST */
 async function respondRequest(id, status) {
   const { error } = await db
     .from("friend_requests")
@@ -608,7 +627,7 @@ async function loadFriends() {
   `).join("");
 }
 
-/* OPEN PRIVATE CHAT — UPDATED SECURE VERSION */
+/* OPEN PRIVATE CHAT */
 async function openChat(friendId) {
   if (!currentUser) return;
 
@@ -643,7 +662,6 @@ async function openChat(friendId) {
     el("chatAvatar").textContent =
       initials(friend.display_name || friend.username);
 
-    /* CHECK WHETHER A PRIVATE CHAT ALREADY EXISTS */
     const { data: myMemberships, error: myError } = await db
       .from("conversation_members")
       .select("conversation_id")
@@ -684,13 +702,10 @@ async function openChat(friendId) {
       }
     }
 
-    /* CREATE A NEW PRIVATE CHAT USING THE SECURE DATABASE FUNCTION */
     if (!found) {
       const { data: conversationId, error: createError } = await db.rpc(
         "daoos_create_private_conversation",
-        {
-          friend_uuid: friendId
-        }
+        { friend_uuid: friendId }
       );
 
       if (createError) {
@@ -706,14 +721,12 @@ async function openChat(friendId) {
         throw new Error("The database did not return a conversation ID.");
       }
 
-      found = {
-        id: conversationId,
-        is_group: false
-      };
+      found = { id: conversationId, is_group: false };
     }
 
     activeConversation = found.id;
 
+    el("mediaStatus").textContent = "";
     await loadMessages();
     subscribeMessages();
 
@@ -731,10 +744,12 @@ async function openChat(friendId) {
 async function loadMessages() {
   if (!activeConversation) return;
 
+  const conversationAtStart = activeConversation;
+
   const { data, error } = await db
     .from("messages")
     .select("*")
-    .eq("conversation_id", activeConversation)
+    .eq("conversation_id", conversationAtStart)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -743,44 +758,96 @@ async function loadMessages() {
     return;
   }
 
-  renderMessages(data || []);
+  if (conversationAtStart !== activeConversation) return;
+
+  await renderMessages(data || []);
 }
 
-/* DISPLAY MESSAGES */
-function renderMessages(items) {
+/* DISPLAY TEXT, PHOTOS AND VIDEOS */
+async function renderMessages(items) {
   if (!items.length) {
     el("messages").innerHTML =
       '<div class="empty">Say hello and start your conversation.</div>';
     return;
   }
 
-  el("messages").innerHTML = items.map(m => `
-    <div class="bubble ${m.sender_id === currentUser.id ? "mine" : ""}">
-      ${escapeHTML(m.body)}
-      <small>${new Date(m.created_at).toLocaleString()}</small>
-    </div>
-  `).join("");
+  const conversationAtStart = activeConversation;
 
+  const rendered = await Promise.all(items.map(async m => {
+    const mine = m.sender_id === currentUser.id;
+    let content = "";
+
+    if (m.media_path) {
+      const { data: signedData, error: signedError } = await db.storage
+        .from(MEDIA_BUCKET)
+        .createSignedUrl(m.media_path, 3600);
+
+      if (signedError || !signedData?.signedUrl) {
+        content = `<div class="media-name">Attachment unavailable: ${escapeHTML(m.media_name || "File")}</div>`;
+      } else {
+        const url = escapeHTML(signedData.signedUrl);
+        const mediaName = escapeHTML(m.media_name || "Attachment");
+
+        if ((m.media_type || "").startsWith("image/")) {
+          content = `
+            <img class="chat-media"
+              src="${url}"
+              alt="${mediaName}"
+              loading="lazy">
+            <span class="media-name">${mediaName}</span>
+          `;
+        } else if ((m.media_type || "").startsWith("video/")) {
+          content = `
+            <video class="chat-video"
+              controls
+              playsinline
+              preload="metadata">
+              <source src="${url}" type="${escapeHTML(m.media_type)}">
+              Your browser does not support video playback.
+            </video>
+            <span class="media-name">${mediaName}</span>
+          `;
+        } else {
+          content = `<a href="${url}" target="_blank" rel="noopener">Open attachment</a>`;
+        }
+      }
+    } else {
+      content = escapeHTML(m.body || "");
+    }
+
+    return `
+      <div class="bubble ${mine ? "mine" : ""}">
+        ${content}
+        <small>${new Date(m.created_at).toLocaleString()}</small>
+      </div>
+    `;
+  }));
+
+  if (conversationAtStart !== activeConversation) return;
+
+  el("messages").innerHTML = rendered.join("");
   el("messages").scrollTop = el("messages").scrollHeight;
 }
 
-/* SEND MESSAGE */
+/* SEND TEXT MESSAGE */
 async function sendMessage() {
   const body = el("messageInput").value.trim();
 
   if (!body || !activeConversation || !currentUser) return;
 
+  const conversationAtStart = activeConversation;
   el("messageInput").value = "";
 
   const { data, error: authError } = await db.auth.getUser();
 
   if (authError || !data.user) {
     alert("Please log in again.");
+    el("messageInput").value = body;
     return;
   }
 
   const { error } = await db.from("messages").insert({
-    conversation_id: activeConversation,
+    conversation_id: conversationAtStart,
     sender_id: data.user.id,
     body: body
   });
@@ -791,6 +858,104 @@ async function sendMessage() {
   }
 }
 
+/* UPLOAD PHOTO OR VIDEO */
+async function uploadMedia(event) {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  const input = event.target;
+  const button = el("mediaButton");
+  const status = el("mediaStatus");
+
+  if (!currentUser || !activeConversation) {
+    alert("Please open a chat first.");
+    input.value = "";
+    return;
+  }
+
+  if (
+    !file.type.startsWith("image/") &&
+    !file.type.startsWith("video/")
+  ) {
+    alert("Please select an image or video file.");
+    input.value = "";
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    alert("File is too large. Maximum size is 25 MB.");
+    input.value = "";
+    return;
+  }
+
+  const conversationAtStart = activeConversation;
+  button.disabled = true;
+  status.textContent = "Uploading your file...";
+
+  let uploadedPath = null;
+
+  try {
+    const safeName = file.name
+      .replace(/[^a-zA-Z0-9._-]/g, "_")
+      .slice(-100);
+
+    const uniqueName =
+      (crypto.randomUUID
+        ? crypto.randomUUID()
+        : Date.now() + "-" + Math.random().toString(36).slice(2))
+      + "-" + safeName;
+
+    const path =
+      conversationAtStart + "/" +
+      currentUser.id + "/" +
+      uniqueName;
+
+    const { data: uploadData, error: uploadError } = await db.storage
+      .from(MEDIA_BUCKET)
+      .upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type
+      });
+
+    if (uploadError) throw uploadError;
+
+    uploadedPath = uploadData.path;
+
+    const { error: messageError } = await db
+      .from("messages")
+      .insert({
+        conversation_id: conversationAtStart,
+        sender_id: currentUser.id,
+        body: file.name,
+        media_path: uploadedPath,
+        media_type: file.type,
+        media_name: file.name
+      });
+
+    if (messageError) {
+      await db.storage.from(MEDIA_BUCKET).remove([uploadedPath]);
+      uploadedPath = null;
+      throw messageError;
+    }
+
+    status.textContent = "File sent successfully!";
+    input.value = "";
+
+    if (activeConversation === conversationAtStart) {
+      await loadMessages();
+    }
+
+  } catch (error) {
+    console.error("Media upload error:", error);
+    status.textContent = "";
+    alert("Upload failed: " + (error.message || "Please try again."));
+  } finally {
+    button.disabled = false;
+  }
+}
+
 /* REALTIME MESSAGES */
 function subscribeMessages() {
   if (messageChannel) {
@@ -798,17 +963,23 @@ function subscribeMessages() {
     messageChannel = null;
   }
 
+  const conversationAtStart = activeConversation;
+
   messageChannel = db
-    .channel("daoos-chat-" + activeConversation)
+    .channel("daoos-chat-" + conversationAtStart)
     .on(
       "postgres_changes",
       {
         event: "INSERT",
         schema: "public",
         table: "messages",
-        filter: "conversation_id=eq." + activeConversation
+        filter: "conversation_id=eq." + conversationAtStart
       },
-      () => loadMessages()
+      () => {
+        if (activeConversation === conversationAtStart) {
+          loadMessages();
+        }
+      }
     )
     .subscribe();
 }
@@ -829,7 +1000,7 @@ async function backToDashboard() {
   await loadFriends();
 }
 
-/* RESTORE EXISTING LOGIN SESSION ON PAGE OPEN */
+/* RESTORE LOGIN SESSION */
 (async function initializeDAOOS() {
   try {
     const { data, error } = await db.auth.getSession();
